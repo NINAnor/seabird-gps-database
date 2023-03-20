@@ -1,0 +1,23 @@
+version: "3"
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  dbmate:
+    build: db
+    command: --wait --no-dump-schema up
+    environment:
+      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable"
+  postgrest:
+    image: postgrest/postgrest:v10.1.2
+    environment:
+      PGRST_DB_URI: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres"
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_ANON_ROLE: web_anon
+    ports:
+      - 3000:3000
+volumes:
+  pgdata:

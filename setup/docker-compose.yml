@@ -1,0 +1,7 @@
+version: "3"
+services:
+  setup:
+    build: setup
+    user: root
+    volumes:
+      - ../secrets:/secrets
