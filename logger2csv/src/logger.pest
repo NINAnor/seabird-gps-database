@@ -1,0 +1,48 @@
+file = {
+    SOI
+    // Regular .csv, IgotU loggers .pos
+    ~ csv
+    // Accelerometer .txt
+    | (
+        "ACCELERATION DATA " ~ NEWLINE+
+        ~ section ~ NEWLINE+
+        ~ csv
+      )
+    // Pathtrack .csv
+    | (
+        "*"+ ~ NEWLINE
+        ~ ((!NEWLINE ~ ANY)+ ~ NEWLINE){3}
+        ~ "*"+ ~ NEWLINE
+        ~ csv
+      )
+    // CatTrack .csv
+    | (
+        section ~ NEWLINE+
+        ~ "-"+ ~ NEWLINE
+        ~ csv
+      )
+    // TDR .csv
+    | (
+        (
+            ((section ~ NEWLINE+){6} ~ datablock)
+            | ((section ~ NEWLINE+){7} ~ datablock)
+            | ((section ~ NEWLINE+){8} ~ datablock)
+        )
+        ~ csv ~ NEWLINE+
+        ~ section ~ NEWLINE+
+      )
+    ~ EOI }
+
+section = _{ ((!NEWLINE ~ ANY)+ ~ NEWLINE)+ }
+
+datablock = _{
+    "Data Block " ~ ASCII_DIGIT ~ NEWLINE
+     ~ (kv ~ NEWLINE)+
+}
+kv = _{ kv_cell ~ "=" ~ kv_cell }
+kv_cell = _{ (!(NEWLINE | "=") ~ ANY)+ }
+
+csv = _{ (csv_line ~ NEWLINE)+ }
+csv_sep = _{ ("," | ";") ~ " "? }
+csv_line = { (csv_cell ~ csv_sep)+ ~ csv_cell ~ csv_sep? }
+csv_cell = { (!(NEWLINE | csv_sep) ~ ANY)+ }
