@@ -27,7 +27,7 @@ create table survey(
     ring int references ring(id),
     year smallint not null,
 
-    total_mass_mg int,
+    total_mass_g int,
 
     age text,
     sex text,
@@ -35,11 +35,11 @@ create table survey(
 
     mass_deployment_g int,
     mass_retrieval_g int,
-    scull_um int,
-    tarsus_um int,
-    wing_um int,
-    culmen_um int,
-    gonys_um int,
+    scull_mm decimal,
+    tarsus_mm decimal,
+    wing_mm decimal,
+    culmen_mm decimal,
+    gonys_mm decimal,
 
     breeding_stage_deployment text,
     eggs_deployment text,
@@ -77,8 +77,8 @@ create table deployment(
 
     status text,
 
-    sampling_freq_ms int,
-    mass_mg int,
+    sampling_freq_s decimal,
+    mass_g decimal,
     attachment_method text,
     mount_method text,
     startup timestamp with time zone,

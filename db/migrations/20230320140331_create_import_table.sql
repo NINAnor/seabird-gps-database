@@ -166,7 +166,7 @@ begin
         animal,
         year,
 
-        (new.total_logger_mass_all_loggers_g)::decimal*1000,
+        (new.total_logger_mass_all_loggers_g)::decimal,
 
         new.age,
         new.sex,
@@ -174,11 +174,11 @@ begin
 
         (new.mass_deployment)::int,
         (new.mass_retrieval)::int,
-        (new.scull)::decimal*1000,
-        (new.tarsus)::decimal*1000,
-        (new.wing)::decimal*1000,
-        (new.culmen)::decimal*1000,
-        (new.gonys)::decimal*1000,
+        (new.scull)::decimal,
+        (new.tarsus)::decimal,
+        (new.wing)::decimal,
+        (new.culmen)::decimal,
+        (new.gonys)::decimal,
 
         new.breeding_stage_deployment,
         (new.eggs_deployment)::int,
@@ -207,9 +207,9 @@ begin
             default,
             animal,
             year,
-            (new.chick1_mass_deployment)::decimal*1000,
+            (new.chick1_mass_deployment)::decimal,
             new.chick1_age_deployment,
-            (new.chick1_mass_retrieval)::decimal*1000,
+            (new.chick1_mass_retrieval)::decimal,
             new.chick1_age_retrieval
         );
     end if;
@@ -219,9 +219,9 @@ begin
             default,
             animal,
             year,
-            (new.chick2_mass_deployment)::decimal*1000,
+            (new.chick2_mass_deployment)::decimal,
             new.chick2_age_deployment,
-            (new.chick2_mass_retrieval)::decimal*1000,
+            (new.chick2_mass_retrieval)::decimal,
             new.chick2_age_retrieval
         );
     end if;
@@ -231,9 +231,9 @@ begin
             default,
             animal,
             year,
-            (new.chick3_mass_deployment)::decimal*1000,
+            (new.chick3_mass_deployment)::decimal,
             new.chick3_age_deployment,
-            (new.chick3_mass_retrieval)::decimal*1000,
+            (new.chick3_mass_retrieval)::decimal,
             new.chick3_age_retrieval
         );
     end if;
@@ -248,8 +248,8 @@ begin
             new.gps_logger_id,
             animal,
             new.logger_status,
-            (new.gps_record_frequency_sec)::int*60,
-            (new.mass_gps_logger_g)::decimal*1000,
+            (new.gps_record_frequency_sec)::int*1000,
+            (new.mass_gps_logger_g)::decimal,
             new.gps_attachment_method,
             new.gps_mount_method,
             concat(
@@ -282,8 +282,8 @@ begin
             new.gls_logger_id,
             animal,
             null, -- no status?
-            (new.gls_record_frequency_min)::int*3600,
-            (new.gls_logger_mass_g)::decimal*1000,
+            (new.gls_record_frequency_min)::int*60*1000,
+            (new.gls_logger_mass_g)::decimal,
             new.gls_attachment_method,
             new.gls_mount_method,
             concat(
@@ -316,8 +316,8 @@ begin
             new.tdr_logger_id,
             animal,
             null, -- no status?
-            (new.tdr_record_frequency_sec)::int*60,
-            (new.tdr_mass_g)::decimal*1000,
+            (new.tdr_record_frequency_sec)::int*1000,
+            (new.tdr_mass_g)::decimal,
             new.tdr_attachment_method,
             new.tdr_mount_method,
             concat(
@@ -351,7 +351,7 @@ begin
             animal,
             null, -- no status?
             (new.accelerometer_record_frequency_millisec)::int,
-            (new.accelerometer_mass_g)::decimal*1000,
+            (new.accelerometer_mass_g)::decimal,
             new.accelerometer_attachment_method,
             new.accelerometer_mount_method,
             concat(
