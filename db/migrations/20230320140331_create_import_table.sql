@@ -140,7 +140,14 @@ begin
         new.nest_id
     ) on conflict do nothing;
     -- TODO: consider multiple changes
-    animal = coalesce(new.old_ring_number, new.ring_number)::int;
+    if new.old_ring_number is null then
+        animal = (new.ring_number)::int;
+    else
+        select animal.id into strict animal
+          from ring
+          join animal on ring.animal = animal.id
+         where ring.id = new.old_ring_number;
+    end if;
     year = extract(year from date (new.gps_startup_date));
     insert into animal values(
         animal,
@@ -192,7 +199,6 @@ begin
 
         new.comment,
         new.other,
-        (new.old_ring_number)::int,
         new.data_responsible
     );
 

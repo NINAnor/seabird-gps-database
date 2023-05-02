@@ -9,7 +9,7 @@ create table colony(
 );
 
 create table animal(
-    first_ring int primary key,
+    id int primary key,
     species text not null,
     morph text,
     subspecies text
@@ -20,7 +20,7 @@ create table ring(
     euring_code text,
     colour_ring_colour text,
     colour_ring_code text,
-    animal int references animal(first_ring) not null
+    animal int references animal(id) not null
 );
 
 create table survey(
@@ -60,7 +60,6 @@ create table survey(
 
     notes text,
     other text,
-    old_ring_number int,
     data_responsible text,
 
     primary key (year, ring)
@@ -74,7 +73,7 @@ create table logger(
 
 create table deployment(
     logger text references logger(id) not null,
-    animal int references animal(first_ring) not null,
+    animal int references animal(id) not null,
 
     status text,
 
@@ -92,7 +91,7 @@ create table deployment(
 create table chick(
     id integer primary key generated always as identity,
 
-    animal int references animal(first_ring) not null,
+    animal int references animal(id) not null,
     year smallint not null,
 
     mass_deployment int,
