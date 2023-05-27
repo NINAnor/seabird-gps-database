@@ -5,7 +5,7 @@ file = {
     // Accelerometer
     | (
         "ACCELERATION DATA " ~ NEWLINE+
-        ~ section ~ NEWLINE+
+        ~ acceleration_header ~ NEWLINE+
         ~ csv
       )
     // Pathtrack
@@ -33,11 +33,22 @@ file = {
       )
     ~ EOI }
 
+acceleration_header = _{
+    " "* ~ frequency ~ " msec/point" ~ NEWLINE
+    ~ "RECORD TIME" ~ (!NEWLINE ~ ANY)+ ~ NEWLINE
+    ~ "START DATE" ~ " "+ ~ date ~ NEWLINE
+    ~ "START TIME" ~ " "+ ~ time
+}
+
+frequency = { ASCII_DIGIT+ }
+date = { ASCII_DIGIT{4} ~ ("/" ~ " "? ~ ASCII_DIGIT{1,2}){2} }
+time = { ASCII_DIGIT{2} ~ (":" ~ ASCII_DIGIT{2}){2} }
+
 // Multiple lines ending with an empty line
 section = _{ ((!NEWLINE ~ ANY)+ ~ NEWLINE)+ }
 
 // CSV parsing
-csv = _{ (csv_line ~ NEWLINE)+ }
+csv = _{ (csv_header ~ NEWLINE) ~ (csv_line ~ NEWLINE)+ }
 csv_sep = _{
     // CatTrack, IgotU
     ", "
@@ -56,6 +67,7 @@ csv_line = {
     // Accelerometer
     | ((csv_cell ~ csv_sep)+)
 }
+csv_header = { csv_line }
 csv_cell = { (!(NEWLINE | csv_sep) ~ ANY)+ }
 
 // TDR datablock
