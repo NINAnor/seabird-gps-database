@@ -1,0 +1,30 @@
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+    {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"},
+]
+dependencies = [
+    "pywebio>=1.7.0",
+    "requests>=2.28.1",
+]
+requires-python = ">=3.8"
+license = {text = "GPLv3"}
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm]
+
+[tool.black]
+
+[tool.isort]
+# https://pycqa.github.io/isort/docs/configuration/black_compatibility.html
+profile = "black"
+
+[tool.ruff]
+fix = true
+ignore = ["E501"]

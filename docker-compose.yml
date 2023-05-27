@@ -17,7 +17,25 @@ services:
       PGRST_DB_URI: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres"
       PGRST_JWT_SECRET: ${JWT_SECRET}
       PGRST_DB_ANON_ROLE: web_anon
+  wizard:
+    build:
+      context: wizard
+    environment:
+      OPENREFINE_URL: https://openrefine.nina.no
+      OPENREFINE_PUBLIC_URL: http://openrefine.nina.no
+      POSTGREST_URL: http://postgrest:3000
+      POSTGREST_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2ODUyMDYxNjAsInJvbGUiOiJ3cml0ZXIifQ.dPKc0F8lG8-Kd9PVgotUpbmsH4bBWFQpp_epZCcAQMk"
+      LOGGING: DEBUG
+    tty: true
+    stdin_open: true
+  pgweb:
+    image: sosedoff/pgweb:latest
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
+      WAIT_FOR: postgres:5432
+  nginx:
+    build: nginx
     ports:
-      - 3000:3000
+      - 8000:80
 volumes:
   pgdata:
