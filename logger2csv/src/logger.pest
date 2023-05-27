@@ -48,7 +48,7 @@ time = { ASCII_DIGIT{2} ~ (":" ~ ASCII_DIGIT{2}){2} }
 section = _{ ((!NEWLINE ~ ANY)+ ~ NEWLINE)+ }
 
 // CSV parsing
-csv = _{ (csv_header ~ NEWLINE) ~ (csv_line ~ NEWLINE)+ }
+csv = _{ (csv_header_line ~ NEWLINE) ~ (csv_line ~ NEWLINE)+ }
 csv_sep = _{
     // CatTrack, IgotU
     ", "
@@ -67,8 +67,17 @@ csv_line = {
     // Accelerometer
     | ((csv_cell ~ csv_sep)+)
 }
-csv_header = { csv_line }
 csv_cell = { (!(NEWLINE | csv_sep) ~ ANY)+ }
+
+csv_header_line = {
+    // mGPS-2 - earth&Ocean Technologies
+    ((csv_header_cell ~ csv_sep)+ ~ "\t\t")
+    // CatTrack, IgotU, Pathtrack, TDR
+    | ((csv_header_cell ~ csv_sep)+ ~ csv_header_cell)
+    // Accelerometer
+    | ((csv_header_cell ~ csv_sep)+)
+}
+csv_header_cell = { (!(NEWLINE | csv_sep) ~ (ASCII_ALPHA | " " | "/"))+ }
 
 // TDR datablock
 datablock = _{

@@ -41,7 +41,7 @@ fn main() {
             Rule::time => {
                 time = file_pair.as_str().into();
             },
-            Rule::csv_header => {
+            Rule::csv_header_line => {
                 print!("filename");
                 if !date.is_empty() {
                     print!(",timestamp");
@@ -49,14 +49,7 @@ fn main() {
                 }
                 for csv_header_line in file_pair.into_inner() {
                     match csv_header_line.as_rule() {
-                        Rule::csv_line => {
-                            for csv_line_pair in csv_header_line.into_inner() {
-                                match csv_line_pair.as_rule() {
-                                    Rule::csv_cell => print!(",{}", csv_line_pair.as_str().trim()),
-                                    _ => unreachable!(),
-                                }
-                            }
-                        }
+                        Rule::csv_header_cell => print!(",{}", csv_header_line.as_str().trim()),
                         _ => unreachable!(),
                     }
                 }
