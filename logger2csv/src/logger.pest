@@ -11,7 +11,8 @@ file = {
     // Pathtrack
     | (
         "*"+ ~ NEWLINE
-        ~ ((!NEWLINE ~ ANY)+ ~ NEWLINE){3}
+        ~ pathtrack_definition ~ NEWLINE
+        ~ ((!NEWLINE ~ ANY)+ ~ NEWLINE){2}
         ~ "*"+ ~ NEWLINE
         ~ csv
       )
@@ -33,6 +34,8 @@ file = {
       )
     ~ EOI }
 
+pathtrack_definition = { (!NEWLINE ~ ANY)+ }
+
 acceleration_header = _{
     " "* ~ frequency ~ " msec/point" ~ NEWLINE
     ~ "RECORD TIME" ~ (!NEWLINE ~ ANY)+ ~ NEWLINE
@@ -48,7 +51,10 @@ time = { ASCII_DIGIT{2} ~ (":" ~ ASCII_DIGIT{2}){2} }
 section = _{ ((!NEWLINE ~ ANY)+ ~ NEWLINE)+ }
 
 // CSV parsing
-csv = _{ (csv_header_line ~ NEWLINE) ~ (csv_line ~ NEWLINE)+ }
+csv = _{
+    // Optional header: Pathtrack
+    (csv_header_line ~ NEWLINE)? ~
+    (csv_line ~ NEWLINE)+ }
 csv_sep = _{
     // CatTrack, IgotU
     ", "

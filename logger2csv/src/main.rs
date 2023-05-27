@@ -25,6 +25,9 @@ fn main() {
         .expect("Cannot parse file")
         .next().unwrap();
 
+    let mut header_missing = true;
+    let mut pathtrack_definition = "";
+
     let mut frequency = Duration::milliseconds(0);
     let mut date = String::new();
     let mut time = String::new();
@@ -32,6 +35,9 @@ fn main() {
 
     for file_pair in file.into_inner() {
         match file_pair.as_rule() {
+            Rule::pathtrack_definition => {
+                pathtrack_definition = file_pair.as_str();
+            },
             Rule::frequency => {
                 frequency = Duration::milliseconds(file_pair.as_str().parse().unwrap());
             },
@@ -42,6 +48,7 @@ fn main() {
                 time = file_pair.as_str().into();
             },
             Rule::csv_header_line => {
+                header_missing = false;
                 print!("filename");
                 if !date.is_empty() {
                     print!(",timestamp");
@@ -56,6 +63,16 @@ fn main() {
                 println!();
             },
             Rule::csv_line => {
+                if header_missing {
+                    if pathtrack_definition.starts_with("PathTrack Raw Pressure Data File") {
+                        println!("filename,year,month,day,hour,minute,second,temperature,pressure_mbar,depth_m");
+                    } else if pathtrack_definition.starts_with("PathTrack Archival Tracking System Results File") {
+                        println!("filename,day,month,year,hour,minute,second,second_of_day,satellites,lat,lon,altitude,clock_offeset,accuracy,battery,unknown1,unknown2");
+                    } else {
+                        panic!();
+                    }
+                    header_missing = false;
+                }
                 print!("{}", identifier);
                 if !date.is_empty() {
                     datetime += frequency;
