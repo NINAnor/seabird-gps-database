@@ -38,13 +38,13 @@ server {
         proxy_set_header Connection $connection_upgrade;
     }
 
-    location ~ ^/postgrest(/?)(.*) {
-        set $upstream http://postgrest:3000/$2;
-        proxy_pass $upstream;
+    location ~ ^/postgrest/?(.*)$ {
+        set $upstream http://postgrest:3000;
+        proxy_pass $upstream/$1$is_args$args;
     }
 
-    location ~ ^/pgweb(/?)(.*) {
-        set $upstream http://pgweb:8081/$2;
-        proxy_pass $upstream;
+    location ~ /pgweb/?(.*)$ {
+        set $upstream http://pgweb:8081;
+        proxy_pass $upstream/$1$is_args$args;
     }
 }
