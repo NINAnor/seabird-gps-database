@@ -7,14 +7,14 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from pywebio import start_server
-from pywebio.input import actions, file_upload
+from pywebio.input import actions, file_upload, input, input_group, NUMBER
 from pywebio.output import clear, put_error, put_link, put_success, put_text, use_scope
 
 logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
 
 OPENREFINE_URL = os.getenv("OPENREFINE_URL", "http://localhost:3333")
 OPENREFINE_PUBLIC_URL = os.getenv("OPENREFINE_PUBLIC_URL", OPENREFINE_URL)
-POSTGREST_URL = os.getenv("POSTGREST_URL", "http:://localhost:3000")
+POSTGREST_URL = os.getenv("POSTGREST_URL", "http://localhost:3000")
 POSTGREST_TOKEN = os.getenv("POSTGREST_TOKEN")
 
 logging.debug(os.environ)
@@ -55,6 +55,7 @@ class OpenRefine:
             params=params,
             stream=True,
         )
+        response.raise_for_status()
         return response
 
     def create_project(self, name, files, file_format, index=0, **options):
@@ -87,12 +88,20 @@ class OpenRefine:
 
         response = self.request("create-project-from-upload", method="POST", files=form)
 
-        project = parse_qs(urlparse(response.url).query)["project"]
+        project = int(parse_qs(urlparse(response.url).query)["project"][0])
 
         # https://github.com/OpenRefine/OpenRefine/issues/5387
-        response = self.request("get-rows", project=project, start=0, limit=0)
+        self.get_rows(project)
 
         return project
+
+    def get_rows(self, project, start=0, limit=0):
+        response = self.request("get-rows", project=project, start=start, limit=limit)
+        return response.json()
+
+    def get_metadata(self, project):
+        response = self.request("get-project-metadata", project=project)
+        return response.json()
 
     def project_url(self, project):
         internal_url = requests.get(
@@ -113,14 +122,21 @@ class OpenRefine:
             format=file_format,
         )
 
-
 def wizard():
     openrefine = OpenRefine(OPENREFINE_URL, OPENREFINE_PUBLIC_URL)
 
-    files = file_upload("Select spreadsheets:", multiple=True)
+    data = input_group(
+        "Import", [
+            file_upload("Select spreadsheets:", multiple=True, name="files"),
+            input("Ignore first N line(s) at beginning of file", NUMBER, value=0, name="ignorelines"),
+            input("Parse next M line(s) as column headers", NUMBER, value=1, name="headerlines"),
+        ]
+    )
+
+    files, ignorelines, headerlines = data["files"], data["ignorelines"], data["headerlines"]
 
     project = openrefine.create_project(
-        files[0]["filename"], files, "binary/text/xml/xls/xlsx", ignoreLines=1
+        files[0]["filename"], files, files[0]["mime_type"], headerLines=headerlines, ignoreLines=ignorelines
     )
     project_url = openrefine.project_url(project)
 
