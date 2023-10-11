@@ -1,11 +1,14 @@
 version: "3"
 services:
   postgres:
-    image: postgis/postgis:15-3.3
+    image: postgis/postgis:16-3.4
+    #command: "-c log_statement=all"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
   dbmate:
     build: db
     command: --wait --no-dump-schema up
@@ -24,7 +27,7 @@ services:
       OPENREFINE_URL: https://openrefine.nina.no
       OPENREFINE_PUBLIC_URL: http://openrefine.nina.no
       POSTGREST_URL: http://postgrest:3000
-      POSTGREST_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2ODUyMDYxNjAsInJvbGUiOiJ3cml0ZXIifQ.dPKc0F8lG8-Kd9PVgotUpbmsH4bBWFQpp_epZCcAQMk"
+      POSTGREST_TOKEN: ${WRITER_TOKEN}
       LOGGING: DEBUG
     tty: true
     stdin_open: true

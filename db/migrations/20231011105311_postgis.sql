@@ -3,4 +3,3 @@
 create extension if not exists postgis;
 
 -- migrate:down
-

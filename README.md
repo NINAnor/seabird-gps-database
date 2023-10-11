@@ -12,7 +12,7 @@ docker compose --file setup/docker-compose.yml run --rm setup
 # Run
 
 ```bash
-docker compose --env-file secrets/docker up --build
+docker compose --env-file secrets/docker --env-file secrets/tokens up --build
 ```
 
 # Use the API
