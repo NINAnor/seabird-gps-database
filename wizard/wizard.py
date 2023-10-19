@@ -4,6 +4,8 @@ import logging
 import os
 from urllib.parse import parse_qs, urlparse
 import io
+import traceback
+import os.path
 
 import requests
 from pywebio import start_server
@@ -66,6 +68,22 @@ def wizard():
         put_error(str(instance) + "\n" + response.text)
     else:
         put_success("Data has been imported sucessfully.")
+
+    logger_files = file_upload("Select logger data:", multiple=True)
+    try:
+        for logger_file in logger_files:
+            logger_file_local = 'loggers_data/'+logger_file['filename']
+            if os.path.exists(logger_file_local):
+                raise FileExistsError("File {logger_file['filename']} exists already")
+            with open(logger_file_local, 'wb') as output:
+                output.write(logger_file['content'])
+    except Exception as instance:
+        for logger_file in logger_files:
+            logger_file_local = 'loggers_data/'+logger_file['filename']
+            os.remove(logger_file_local)
+        put_error(traceback.format_exc())
+    else:
+        put_success("Loggers data have been imported sucessfully.")
 
 if __name__ == "__main__":
     start_server(wizard, port=8000, debug=True)

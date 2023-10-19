@@ -31,6 +31,8 @@ services:
       LOGGING: DEBUG
     tty: true
     stdin_open: true
+    volumes:
+      - ./loggers_data:/app/loggers_data
   pgweb:
     image: sosedoff/pgweb:latest
     environment:
