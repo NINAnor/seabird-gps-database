@@ -11,7 +11,6 @@ services:
       - 5432:5432
   dbmate:
     build: db
-    command: --wait --no-dump-schema up
     environment:
       DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable"
   postgrest:
