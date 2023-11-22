@@ -23,8 +23,6 @@ services:
     build:
       context: wizard
     environment:
-      OPENREFINE_URL: https://openrefine.nina.no
-      OPENREFINE_PUBLIC_URL: http://openrefine.nina.no
       POSTGREST_URL: http://postgrest:3000
       POSTGREST_TOKEN: ${WRITER_TOKEN}
       LOGGING: DEBUG
