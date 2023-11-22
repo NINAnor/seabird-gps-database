@@ -1,6 +1,6 @@
 [project]
-name = ""
-version = ""
+name = "seapop-wizard"
+version = "0.1.0"
 description = ""
 authors = [
     {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"},
