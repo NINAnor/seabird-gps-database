@@ -36,6 +36,7 @@ def wizard():
             ),
         ],
     )
+    MAX_CONSECUTIVE_EMPTY_LINES = 200
 
     data = []
     for index, file in enumerate(user_inputs["files"]):
@@ -47,10 +48,13 @@ def wizard():
         logging.debug(header)
         for row in rows:
             row = [cell.value for cell in row]
-            logging.debug(row)
-            if not any(row):
-                continue
-            data.append(dict(zip(header, row)))
+            if any(row):
+                logging.debug(row)
+                data.append(dict(zip(header, row)))
+            elif MAX_CONSECUTIVE_EMPTY_LINES > 0:
+                MAX_CONSECUTIVE_EMPTY_LINES -= 1
+            else:
+                break
 
     put_text("The files have loaded.")
 
