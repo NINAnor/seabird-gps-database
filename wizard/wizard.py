@@ -49,6 +49,10 @@ def print_response_error(instance, response):
         put_error(str(instance) + "\n" + response.text)
 
 
+def put_reload_button():
+    put_button("Upload new data",onclick=lambda: run_js('window.location.reload()'))
+
+
 def wizard():
     user_inputs = input_group(
         "Import",
@@ -101,6 +105,8 @@ def wizard():
         response.raise_for_status()
     except Exception as instance:
         print_response_error(instance=instance, response=response)
+        put_reload_button()
+        return
     else:
         put_success("Data has been imported sucessfully.")
 
@@ -117,7 +123,6 @@ def wizard():
             logger_file_local = "loggers_data/" + logger_file["filename"]
             os.remove(logger_file_local)
         put_error(traceback.format_exc())
-        put_button("Upload new data",onclick=lambda: run_js('window.location.reload()'))
         return
     else:
         put_success("Loggers data have been uploaded.")
@@ -137,7 +142,7 @@ def wizard():
     else:
         put_success("Loggers data have been imported sucessfully.")
 
-    put_button("Upload new data",onclick=lambda: run_js('window.location.reload()'))
+    put_reload_button()
 
 
 if __name__ == "__main__":
