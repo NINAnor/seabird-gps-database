@@ -11,7 +11,8 @@ import orjson
 import requests
 from pywebio import start_server
 from pywebio.input import NUMBER, actions, file_upload, input, input_group
-from pywebio.output import clear, put_error, put_success, put_text
+from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html
+from pywebio.session import run_js
 
 from parsers.parser import detect, parse
 
@@ -21,6 +22,31 @@ POSTGREST_URL = os.getenv("POSTGREST_URL", "http://localhost:3000")
 POSTGREST_TOKEN = os.getenv("POSTGREST_TOKEN")
 
 logging.debug(os.environ)
+
+
+def print_response_error(instance, response):
+    try:
+        body = response.json()
+        put_html(f"""
+<div class="alert alert-danger " role="alert" >
+    <h4>Error</h4>
+    <p>{str(instance)}</p>
+    <table>
+        <thead>
+            <tr>
+            {''.join([f'<th>{k}</th>' for k in body.keys()])}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+            {''.join([f'<td>{k}</td>' for k in body.values()])}
+            </tr>
+        </tbody>
+    </table>
+</div>
+""")
+    except:
+        put_error(str(instance) + "\n" + response.text)
 
 
 def wizard():
@@ -74,7 +100,7 @@ def wizard():
         logging.debug(response.text)
         response.raise_for_status()
     except Exception as instance:
-        put_error(str(instance) + "\n" + response.text)
+        print_response_error(instance=instance, response=response)
     else:
         put_success("Data has been imported sucessfully.")
 
@@ -91,6 +117,7 @@ def wizard():
             logger_file_local = "loggers_data/" + logger_file["filename"]
             os.remove(logger_file_local)
         put_error(traceback.format_exc())
+        put_button("Upload new data",onclick=lambda: run_js('window.location.reload()'))
         return
     else:
         put_success("Loggers data have been uploaded.")
@@ -106,9 +133,11 @@ def wizard():
         logging.debug(response.text)
         response.raise_for_status()
     except Exception as instance:
-        put_error(str(instance) + "\n" + response.text)
+        print_response_error(instance, response)
     else:
         put_success("Loggers data have been imported sucessfully.")
+
+    put_button("Upload new data",onclick=lambda: run_js('window.location.reload()'))
 
 
 if __name__ == "__main__":
