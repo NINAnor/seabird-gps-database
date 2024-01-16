@@ -57,7 +57,9 @@ def wizard():
     user_inputs = input_group(
         "Import",
         [
-            file_upload("Select spreadsheets:", multiple=True, name="files"),
+            file_upload("Select spreadsheets:", multiple=True, name="files", 
+                accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ),
             input(
                 "Ignore first N line(s) at beginning of file",
                 NUMBER,
