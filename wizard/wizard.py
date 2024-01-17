@@ -7,6 +7,8 @@ import os.path
 import traceback
 import json
 import pathlib
+import tempfile
+import shutil
 
 import openpyxl
 import orjson
@@ -40,7 +42,7 @@ SPREADSHEETS_PATH.mkdir(exist_ok=True)
 logging.debug(os.environ)
 
 
-def print_response_error(instance, response):
+def print_response_error(instance, response, filename):
     try:
         body = response.json()
         no_detail = {k:v for k,v in body.items() if k != 'details'}
@@ -57,6 +59,7 @@ def print_response_error(instance, response):
             body=no_detail.values(),
             details=detail or detail_text,
             title=str(instance),
+            filename=filename,
         ))
     except:
         logging.warn(traceback.format_exc())
@@ -196,7 +199,11 @@ def handle_metadata():
 
 
 def handle_loggers():
+    TEMP_DIR = pathlib.Path(tempfile.mkdtemp())
     headers = {}
+    if POSTGREST_TOKEN:
+        headers["Authorization"] = "Bearer " + POSTGREST_TOKEN
+
     inputs = input_group(
         "Import Loggers",
         [
@@ -205,41 +212,37 @@ def handle_loggers():
     )
     logger_files = inputs["files"]
 
-    try:
-        for logger_file in logger_files:
-            logger_file_local = LOGGERS_PATH / logger_file["filename"]
-            # TODO: check consistency also with database, is there a logger instrumentator already defined
-            if logger_file_local.exists():
-                raise FileExistsError(f"File {logger_file['filename']} exists already")
-            with open(str(logger_file_local), "wb") as output:
+    for logger_file in logger_files:
+        filename = logger_file["filename"]
+        temp_path = TEMP_DIR / filename
+        definitive_path = LOGGERS_PATH / filename
+
+        # TODO: check consistency also with database, is there a logger instrumentator already defined
+        if definitive_path.exists() or temp_path.exists():
+            put_warning(f"File {filename} exists already, will be skipped")
+        else:
+            with open(str(temp_path), "wb") as output:
                 output.write(logger_file["content"])
-    except Exception:
-        for logger_file in logger_files:
-            logger_file_local = LOGGERS_PATH / logger_file["filename"]
-            logger_file_local.unlink()
-        put_error(traceback.format_exc())
-        return
-    else:
-        put_success("Loggers data have been uploaded.")
+            try:
+                stream = open(str(temp_path))
+                datatype = detect(stream).DATATYPE
+                headers["Content-Type"] = "text/csv"
+                response = requests.post(
+                    POSTGREST_URL + f"/import_logger_data_{datatype}",
+                    headers=headers,
+                    data="\n".join(parse(stream)),
+                )
+                logging.debug(response.text)
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as instance:
+                print_response_error(instance, response, filename=filename)
+            except Exception as instance:
+                put_error(f"Logger data {filename}: {traceback.format_exc()}")
+            else:
+                shutil.move(temp_path, definitive_path)
+                put_success(f"Logger data {filename} have been imported sucessfully.")
 
-    try:
-        stream = open(logger_file_local)
-        datatype = detect(stream).DATATYPE
-        headers["Content-Type"] = "text/csv"
-        response = requests.post(
-            POSTGREST_URL + f"/import_logger_data_{datatype}",
-            headers=headers,
-            data="\n".join(parse(stream)),
-        )
-        logging.debug(response.text)
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as instance:
-        print_response_error(instance, response)
-    except Exception as instance:
-        put_error(traceback.format_exc())
-    else:
-        put_success("Loggers data have been imported sucessfully.")
-
+    shutil.rmtree(TEMP_DIR)
     put_reload_button()
 
 
