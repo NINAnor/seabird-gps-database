@@ -39,5 +39,10 @@
             </tr>
         </tbody>
     </table>
+    <h5>Details</h5>
+    {% if details is mapping %}
     {{ render_table(details) }}
+    {% else %}
+    <p>{{ details }}</p>
+    {% endif %}
 </div>

@@ -36,11 +36,17 @@ def print_response_error(instance, response):
         body = response.json()
         no_detail = {k:v for k,v in body.items() if k != 'details'}
         template = env.get_template("import_error.html")
-        detail = json.loads(body.get('details'))
+        detail = {}
+        detail_text = body.get('details')
+        try:
+            detail = json.loads(body.get('details'))
+        except json.decoder.JSONDecodeError:
+            pass
+
         put_html(template.render(
             headers=no_detail.keys(),
             body=no_detail.values(),
-            details=detail,
+            details=detail or detail_text,
             title=str(instance),
         ))
     except:
