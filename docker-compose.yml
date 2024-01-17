@@ -13,6 +13,9 @@ services:
     build: db
     environment:
       DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable"
+    volumes:
+      - ./db/migrations:/db/migrations/
+      - ./db/schema.sql:/db/schema.sql
   postgrest:
     image: postgrest/postgrest:v10.1.2
     environment:
