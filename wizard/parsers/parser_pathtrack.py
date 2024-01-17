@@ -29,5 +29,10 @@ class PathtrackParser(Parser):
         _soi, _metadata, data = self.stream.read().split(self.DIVIDER, 2)
         yield self.HEADER
         for line in read_csv(data):
-            assert len(line) == 16
-            yield line
+            if len(line) == len(self.HEADER):
+                yield line
+            elif len(line) == (len(self.HEADER) - 2):
+                line += ["", ""]
+                yield line
+            else:
+                assert len(line) == len(self.HEADER)
