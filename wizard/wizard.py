@@ -5,6 +5,7 @@ import logging
 import os
 import os.path
 import traceback
+import json
 
 import openpyxl
 import orjson
@@ -33,12 +34,13 @@ logging.debug(os.environ)
 def print_response_error(instance, response):
     try:
         body = response.json()
-        no_detail = {k:v for k,v in body.items() if k != 'details'},
+        no_detail = {k:v for k,v in body.items() if k != 'details'}
         template = env.get_template("import_error.html")
+        detail = json.loads(body.get('details'))
         put_html(template.render(
             headers=no_detail.keys(),
             body=no_detail.values(),
-            details=body.get('details'),
+            details=detail,
             title=str(instance),
         ))
     except:
