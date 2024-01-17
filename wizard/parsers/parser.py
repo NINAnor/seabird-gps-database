@@ -1,3 +1,4 @@
+import pathlib
 from .parser_gps import GPSParser
 from .parser_pathtrack import PathtrackParser
 
@@ -23,4 +24,4 @@ def parse(stream):
     header = next(result)
     yield "filename," + ",".join(header)
     for line in result:
-        yield stream.name + "," + ",".join(line)
+        yield pathlib.Path(stream.name).name + "," + ",".join(line)
