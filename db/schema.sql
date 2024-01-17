@@ -102,20 +102,20 @@ CREATE FUNCTION public.import() RETURNS trigger
     AS $$
 begin
     -- perform some checks
-    if new.gps_deployment_date is not null and new.gps_raw_datafile_name is null then
-        raise exception 'gps_raw_datafile_name cannot be empty if gps_deployment_date is defined';
+    if safe_cast_bool(new.gps_data_collected) and new.gps_raw_datafile_name is null then
+        raise exception 'gps_raw_datafile_name cannot be empty if gps_data_collected is "Yes"';
     end if;
 
-    if new.gls_deployment_date is not null and new.gls_raw_datafile_name is null then
-        raise exception 'gls_raw_datafile_name cannot be empty if gls_deployment_date is defined';
+    if safe_cast_bool(new.gls_data_collected) and not safe_cast_bool(new.logging_for_seatrack) and new.gls_raw_datafile_name is null then
+        raise exception 'gls_raw_datafile_name cannot be empty if gls_data_collected is "Yes"';
     end if;
 
-    if new.tdr_deployment_date is not null and new.tdr_raw_datafile_name is null then
-        raise exception 'tdr_raw_datafile_name cannot be empty if tdr_deployment_date is defined';
+    if safe_cast_bool(new.tdr_data_collected) and new.tdr_raw_datafile_name is null then
+        raise exception 'tdr_raw_datafile_name cannot be empty if tdr_data_collected is "Yes"';
     end if;
 
-    if new.other_sensor_deployment_date is not null and new.other_sensor_raw_datafile_name is null then
-        raise exception 'other_sensor_raw_datafile_name cannot be empty if other_sensor_deployment_date is defined';
+    if safe_cast_bool(new.other_sensor_data_collected) and new.other_sensor_raw_datafile_name is null then
+        raise exception 'other_sensor_raw_datafile_name cannot be empty if other_sensor_data_collected is "Yes"';
     end if;
 
     if new.ring_number is null then
@@ -499,7 +499,7 @@ begin
                  new.gls_deployment_retrieval_time_zone
             end,
             new.gls_raw_datafile_name,
-            case when logging_for_seatrack::bool then 'seatrack' else null end,
+            case when safe_cast_bool(new.logging_for_seatrack) then 'seatrack' else null end,
             new.gls_comments
         );
     end if;
@@ -652,6 +652,24 @@ exception
             detail = row_to_json(new);
 end;
 $$;
+
+
+--
+-- Name: safe_cast_bool(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.safe_cast_bool(p_in text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $_$
+begin
+  begin
+    return $1::bool;
+  exception
+    when others then
+       return null;
+  end;
+end;
+$_$;
 
 
 --
@@ -897,7 +915,7 @@ CREATE TABLE public.logger_instrumentation (
     startup timestamp with time zone,
     deployment timestamp with time zone,
     retrieval timestamp with time zone,
-    filename text NOT NULL,
+    filename text,
     data_stored_externally text,
     comment text
 );
@@ -1122,4 +1140,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240116110423'),
     ('20240117072241'),
     ('20240117081051'),
-    ('20240117093556');
+    ('20240117093556'),
+    ('20240117105114');
