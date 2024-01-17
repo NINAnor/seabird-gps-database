@@ -59,6 +59,21 @@ def put_reload_button():
 
 
 def wizard():
+    result = actions(
+        "What you want to upload?",
+        buttons=[
+        {"value": "metadata", "type": "submit", "label": "Metadata"},
+        {"value": "loggers", "type": "submit", "label": "Loggers"},
+    ])
+    if result == "metadata":
+        handle_metadata()
+    elif result == "loggers":
+        handle_loggers()
+    else:
+        put_reload_button()
+    
+
+def handle_metadata():
     fields = []
     expected_fields = ()
     can_be_empty = ()
@@ -78,7 +93,7 @@ def wizard():
         return
     
     user_inputs = input_group(
-        "Import",
+        "Import Metadata",
         [
             file_upload("Select spreadsheets:", multiple=True, name="files", 
                 accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -155,12 +170,21 @@ def wizard():
         response.raise_for_status()
     except Exception as instance:
         print_response_error(instance=instance, response=response)
-        put_reload_button()
-        return
     else:
         put_success("Data has been imported sucessfully.")
 
-    logger_files = file_upload("Select logger data:", multiple=True, accept=['.csv', '.pos', '.gpx'])
+    put_reload_button()
+
+
+def handle_loggers():
+    headers = {}
+    inputs = input_group(
+        "Import Loggers",
+        [
+            file_upload("Select logger data:", multiple=True, accept=['.csv', '.pos', '.gpx'], name="files"),
+        ]
+    )
+    logger_files = inputs["files"]
     try:
         for logger_file in logger_files:
             logger_file_local = "loggers_data/" + logger_file["filename"]
@@ -187,8 +211,10 @@ def wizard():
         )
         logging.debug(response.text)
         response.raise_for_status()
-    except Exception as instance:
+    except requests.exceptions.HTTPError as instance:
         print_response_error(instance, response)
+    except Exception as instance:
+        put_error(traceback.format_exc())
     else:
         put_success("Loggers data have been imported sucessfully.")
 
