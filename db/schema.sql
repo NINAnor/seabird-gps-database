@@ -102,20 +102,20 @@ CREATE FUNCTION public.import() RETURNS trigger
     AS $$
 begin
     -- perform some checks
-    if new.gps_deployment_date IS NOT NULL AND new.gps_raw_datafile_name IS NULL then
+    if new.gps_deployment_date is not null and new.gps_raw_datafile_name is null then
         raise exception 'gps_raw_datafile_name cannot be empty if gps_deployment_date is defined';
     end if;
 
-    if new.gls_deployment_date IS NOT NULL AND new.gls_raw_datafile_name IS NULL then
+    if new.gls_deployment_date is not null and new.gls_raw_datafile_name is null then
         raise exception 'gls_raw_datafile_name cannot be empty if gls_deployment_date is defined';
     end if;
 
-    if new.tdr_deployment_date IS NOT NULL AND new.tdr_raw_datafile_name IS NULL then
+    if new.tdr_deployment_date is not null and new.tdr_raw_datafile_name is null then
         raise exception 'tdr_raw_datafile_name cannot be empty if tdr_deployment_date is defined';
     end if;
 
-    if new.accelerometer_deployment_date IS NOT NULL AND new.accelerometer_raw_datafile_name IS NULL then
-        raise exception 'accelerometer_raw_datafile_name cannot be empty if accelerometer_deployment_date is defined';
+    if new.other_sensor_deployment_date is not null and new.other_sensor_raw_datafile_name is null then
+        raise exception 'other_sensor_raw_datafile_name cannot be empty if other_sensor_deployment_date is defined';
     end if;
 
     if new.ring_number is null then
@@ -130,8 +130,8 @@ begin
     if new.tdr_deployment_date is not null and new.tdr_logger_id is null then
         new.tdr_logger_id = 'AUTO_' || nextval('auto_logger_id_seq')::text;
     end if;
-    if new.accelerometer_deployment_date is not null and new.accelerometer_logger_id is null then
-        new.accelerometer_logger_id = 'AUTO_' || nextval('auto_logger_id_seq')::text;
+    if new.other_sensor_deployment_date is not null and new.other_sensor_logger_id is null then
+        new.other_sensor_logger_id = 'AUTO_' || nextval('auto_logger_id_seq')::text;
     end if;
     perform import_animal_and_ring(new);
     perform import_colony(new);
@@ -260,24 +260,24 @@ CREATE TABLE public.import (
     tdr_time_zone text,
     tdr_raw_datafile_name text,
     tdr_comment text,
-    accelerometer_logger_model text,
-    accelerometer_logger_id text,
-    accelerometer_status text,
-    accelerometer_data_collected text,
-    accelerometer_record_frequency_millisec text,
-    accelerometer_mass_g text,
-    accelerometer_attachment_method text,
-    accelerometer_mount_method text,
-    accelerometer_startup_date text,
-    accelerometer_startup_time text,
-    accelerometer_deployment_date text,
-    accelerometer_deployment_time text,
-    accelerometer_retrieval_date text,
-    accelerometer_retrieval_time text,
-    accelerometer_startup_deployment_retrieval_time_zone text,
-    accelerometer_time_zone text,
-    accelerometer_raw_datafile_name text,
-    accelerometer_comment text,
+    other_sensor_logger_model text,
+    other_sensor_logger_id text,
+    other_sensor_status text,
+    other_sensor_data_collected text,
+    other_sensor_record_frequency_millisec text,
+    other_sensor_logger_mass_g text,
+    other_sensor_attachment_method text,
+    other_sensor_mount_method text,
+    other_sensor_startup_date text,
+    other_sensor_startup_time text,
+    other_sensor_deployment_date text,
+    other_sensor_deployment_time text,
+    other_sensor_retrieval_date text,
+    other_sensor_retrieval_time text,
+    other_sensor_startup_deployment_retrieval_time_zone text,
+    other_sensor_time_zone text,
+    other_sensor_raw_datafile_name text,
+    other_sensor_comment text,
     comment text,
     other text,
     old_ring_number text,
@@ -357,7 +357,7 @@ begin
         new.gps_deployment_date,
         new.gls_deployment_date,
         new.tdr_deployment_date,
-        new.accelerometer_deployment_date
+        new.other_sensor_deployment_date
     )::date;
     insert into deployment values(
         default,
@@ -534,35 +534,35 @@ begin
             new.tdr_comment
         );
     end if;
-    if new.accelerometer_deployment_date is not null then
+    if new.other_sensor_deployment_date is not null then
         insert into logger values(
-            new.accelerometer_logger_id,
-            'accelerometer',
-            new.accelerometer_logger_model
+            new.other_sensor_logger_id,
+            'other_sensor',
+            new.other_sensor_logger_model
         ) on conflict do nothing;
         insert into deployment values(
             default,
-            new.accelerometer_logger_id,
+            new.other_sensor_logger_id,
             new.ring_number,
-            new.accelerometer_status,
-            (new.accelerometer_record_frequency_millisec)::decimal/1000,
-            (new.accelerometer_mass_g)::decimal,
-            new.accelerometer_attachment_method,
-            new.accelerometer_mount_method,
-            (new.accelerometer_startup_date::date +
-             new.accelerometer_startup_time::time) at time zone
-             new.accelerometer_startup_deployment_retrieval_time_zone,
-            (new.accelerometer_deployment_time::date +
-             new.accelerometer_deployment_time::time) at time zone
-             new.accelerometer_startup_deployment_retrieval_time_zone,
-            case when new.accelerometer_retrieval_date is null then null else
-                (new.accelerometer_retrieval_date::date +
-                 new.accelerometer_retrieval_time::time) at time zone
-                 new.accelerometer_startup_deployment_retrieval_time_zone
+            new.other_sensor_status,
+            (new.other_sensor_record_frequency_millisec)::decimal/1000,
+            (new.other_sensor_logger_mass_g)::decimal,
+            new.other_sensor_attachment_method,
+            new.other_sensor_mount_method,
+            (new.other_sensor_startup_date::date +
+             new.other_sensor_startup_time::time) at time zone
+             new.other_sensor_startup_deployment_retrieval_time_zone,
+            (new.other_sensor_deployment_time::date +
+             new.other_sensor_deployment_time::time) at time zone
+             new.other_sensor_startup_deployment_retrieval_time_zone,
+            case when new.other_sensor_retrieval_date is null then null else
+                (new.other_sensor_retrieval_date::date +
+                 new.other_sensor_retrieval_time::time) at time zone
+                 new.other_sensor_startup_deployment_retrieval_time_zone
             end,
-            new.accelerometer_raw_datafile_name,
+            new.other_sensor_raw_datafile_name,
             null,
-            new.accelerometer_comment
+            new.other_sensor_comment
         );
     end if;
 end;
@@ -1121,4 +1121,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20231122021711'),
     ('20240116110423'),
     ('20240117072241'),
-    ('20240117081051');
+    ('20240117081051'),
+    ('20240117093556');
