@@ -33,6 +33,7 @@ services:
     stdin_open: true
     volumes:
       - ./loggers_data:/app/loggers_data
+      - ./data:/data/
   pgweb:
     image: sosedoff/pgweb:latest
     environment:
@@ -42,5 +43,7 @@ services:
     build: nginx
     ports:
       - 8000:80
+    volumes:
+      - ./data:/data/
 volumes:
   pgdata:

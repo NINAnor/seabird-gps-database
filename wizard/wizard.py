@@ -6,6 +6,7 @@ import os
 import os.path
 import traceback
 import json
+import pathlib
 
 import openpyxl
 import orjson
@@ -27,6 +28,14 @@ logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
 
 POSTGREST_URL = os.getenv("POSTGREST_URL", "http://localhost:3000")
 POSTGREST_TOKEN = os.getenv("POSTGREST_TOKEN")
+DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", '/data/'))
+
+LOGGERS_PATH = DATA_PATH  / 'loggers'
+SPREADSHEETS_PATH = DATA_PATH  / 'metadata'
+
+LOGGERS_PATH.mkdir(exist_ok=True)
+SPREADSHEETS_PATH.mkdir(exist_ok=True)
+
 
 logging.debug(os.environ)
 
@@ -173,6 +182,16 @@ def handle_metadata():
     else:
         put_success("Data has been imported sucessfully.")
 
+    for f in user_inputs["files"]:
+        filepath = SPREADSHEETS_PATH / f["filename"]
+
+        if filepath.exists():
+            name, first_dot, rest = pathlib.Path(f["filename"]).name.partition('.')
+            filepath = SPREADSHEETS_PATH / f'{name}_1.{rest}'
+
+        with open(str(filepath), 'wb') as output:
+            output.write(f["content"])
+
     put_reload_button()
 
 
@@ -185,21 +204,24 @@ def handle_loggers():
         ]
     )
     logger_files = inputs["files"]
+
     try:
         for logger_file in logger_files:
-            logger_file_local = "loggers_data/" + logger_file["filename"]
-            if os.path.exists(logger_file_local):
+            logger_file_local = LOGGERS_PATH / logger_file["filename"]
+            # TODO: check consistency also with database, is there a logger instrumentator already defined
+            if logger_file_local.exists():
                 raise FileExistsError(f"File {logger_file['filename']} exists already")
-            with open(logger_file_local, "wb") as output:
+            with open(str(logger_file_local), "wb") as output:
                 output.write(logger_file["content"])
     except Exception:
         for logger_file in logger_files:
-            logger_file_local = "loggers_data/" + logger_file["filename"]
-            os.remove(logger_file_local)
+            logger_file_local = LOGGERS_PATH / logger_file["filename"]
+            logger_file_local.unlink()
         put_error(traceback.format_exc())
         return
     else:
         put_success("Loggers data have been uploaded.")
+
     try:
         stream = open(logger_file_local)
         datatype = detect(stream).DATATYPE
