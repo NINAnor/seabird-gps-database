@@ -236,6 +236,8 @@ def handle_loggers():
                 response.raise_for_status()
             except requests.exceptions.HTTPError as instance:
                 print_response_error(instance, response, filename=filename)
+            except NotImplementedError:
+                put_error(f"Logger data {filename}: Format not supported")
             except Exception as instance:
                 put_error(f"Logger data {filename}: {traceback.format_exc()}")
             else:
