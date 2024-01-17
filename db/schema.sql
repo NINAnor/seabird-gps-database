@@ -101,6 +101,23 @@ CREATE FUNCTION public.import() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 begin
+    -- perform some checks
+    if new.gps_deployment_date IS NOT NULL AND new.gps_raw_datafile_name IS NULL then
+        raise exception 'gps_raw_datafile_name cannot be empty if gps_deployment_date is defined';
+    end if;
+
+    if new.gls_deployment_date IS NOT NULL AND new.gls_raw_datafile_name IS NULL then
+        raise exception 'gls_raw_datafile_name cannot be empty if gls_deployment_date is defined';
+    end if;
+
+    if new.tdr_deployment_date IS NOT NULL AND new.tdr_raw_datafile_name IS NULL then
+        raise exception 'tdr_raw_datafile_name cannot be empty if tdr_deployment_date is defined';
+    end if;
+
+    if new.accelerometer_deployment_date IS NOT NULL AND new.accelerometer_raw_datafile_name IS NULL then
+        raise exception 'accelerometer_raw_datafile_name cannot be empty if accelerometer_deployment_date is defined';
+    end if;
+
     if new.ring_number is null then
         new.ring_number = 'AUTO_' || nextval('auto_ring_id_seq')::text;
     end if;
@@ -1103,4 +1120,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20231122005845'),
     ('20231122021711'),
     ('20240116110423'),
-    ('20240117072241');
+    ('20240117072241'),
+    ('20240117081051');
