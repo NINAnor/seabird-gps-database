@@ -152,7 +152,7 @@ def wizard():
     else:
         put_success("Data has been imported sucessfully.")
 
-    logger_files = file_upload("Select logger data:", multiple=True)
+    logger_files = file_upload("Select logger data:", multiple=True, accept=['.csv', '.pos', '.gpx'])
     try:
         for logger_file in logger_files:
             logger_file_local = "loggers_data/" + logger_file["filename"]
