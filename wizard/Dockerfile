@@ -11,6 +11,7 @@ RUN --mount=type=cache,target=/root/.cache/pdm \
 
 COPY wizard.py .
 COPY parsers/ parsers/
+COPY templates/ templates/
 
 EXPOSE 8000/TCP
 CMD ["pdm", "run", "./wizard.py"]

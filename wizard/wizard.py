@@ -11,8 +11,14 @@ import orjson
 import requests
 from pywebio import start_server
 from pywebio.input import NUMBER, actions, file_upload, input, input_group
-from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html
+from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html, put_table, put_warning
 from pywebio.session import run_js
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+env = Environment(
+    loader=FileSystemLoader("./templates"),
+    autoescape=select_autoescape()
+)
 
 from parsers.parser import detect, parse
 
@@ -27,33 +33,42 @@ logging.debug(os.environ)
 def print_response_error(instance, response):
     try:
         body = response.json()
-        put_html(f"""
-<div class="alert alert-danger " role="alert" >
-    <h4>Error</h4>
-    <p>{str(instance)}</p>
-    <table>
-        <thead>
-            <tr>
-            {''.join([f'<th>{k}</th>' for k in body.keys()])}
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-            {''.join([f'<td>{k}</td>' for k in body.values()])}
-            </tr>
-        </tbody>
-    </table>
-</div>
-""")
+        no_detail = {k:v for k,v in body.items() if k != 'details'},
+        template = env.get_template("import_error.html")
+        put_html(template.render(
+            headers=no_detail.keys(),
+            body=no_detail.values(),
+            details=body.get('details'),
+            title=str(instance),
+        ))
     except:
+        logging.warn(traceback.format_exc())
         put_error(str(instance) + "\n" + response.text)
 
 
 def put_reload_button():
-    put_button("Upload new data",onclick=lambda: run_js('window.location.reload()'))
+    put_button("Upload new data", onclick=lambda: run_js('window.location.reload()'))
 
 
 def wizard():
+    fields = []
+    expected_fields = ()
+    can_be_empty = ()
+    try:
+        headers = {}
+        headers["Content-Type"] = "application/json"
+        response = requests.get(
+            POSTGREST_URL + "/import_fields",
+            headers=headers,
+        )
+        response.raise_for_status()
+        fields = response.json()
+        expected_fields = set(e.get('column_name') for e in fields)
+        can_be_empty = set(e.get('column_name') for e in fields if e.get('is_nullable'))
+    except Exception as instance:
+        put_error(f'Error while retriving list of valid import fields - {str(instance)}')
+        return
+    
     user_inputs = input_group(
         "Import",
         [
@@ -76,13 +91,38 @@ def wizard():
         rows = workbook["METADATA"].iter_rows()
         for _ in range(user_inputs["ignorelines"]):
             next(rows)
-        header = [cell.value for cell in next(rows) if cell.value]
+        header = [cell.value.strip() for cell in next(rows) if cell.value]
+        missing = expected_fields - set(header)
+        extra = set(header) - expected_fields
+        if (missing - can_be_empty) or extra:
+            errors = [(f, 'missing', f in can_be_empty, ) for f in missing] + [(f, 'extra', '-') for f in extra]
+            
+            errors.sort(key=lambda e: e[0])
+            put_warning(f'Spreadsheet {file["filename"]} structure does not match')
+            put_table([
+                ('field', 'status', 'can be empty'),
+                *errors,
+            ])
+
+            if missing - can_be_empty:
+                put_error(f'Some properties are required to proceed, please fix them')
+                put_reload_button()
+                return
+
+            result = actions(buttons=[
+                {"label": "Ignore extra fields and missing fields", "value": "proceed", "color": "danger"},
+                {"label": "Upload new data", "value": "stop", "type": "cancel" },
+            ])
+            if not result:
+                run_js('window.location.reload()')
+                return
+
         logging.debug(header)
         for row in rows:
-            row = [cell.value for cell in row]
+            row = [cell.value.strip() if isinstance(cell.value, str) else cell.value for cell in row]
             if any(row):
                 logging.debug(row)
-                data.append(dict(zip(header, row)))
+                data.append({k:v for k,v in zip(header, row) if k in expected_fields})
             elif MAX_CONSECUTIVE_EMPTY_LINES > 0:
                 MAX_CONSECUTIVE_EMPTY_LINES -= 1
             else:
