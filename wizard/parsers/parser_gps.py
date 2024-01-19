@@ -1,11 +1,9 @@
-from .helpers import read_csv
-from .parser_base import Parser
+from .parser_base import CSVParser
 
 
-class GPSParser(Parser):
+class GPSParser(CSVParser):
     DATATYPE = "gps"
-    HEAD = ",".join(
-        [
+    FIELDS = [
             "device_id",
             "UTC_datetime",
             "UTC_date",
@@ -31,9 +29,10 @@ class GPSParser(Parser):
             "depth_m",
             "",
         ]
-    )
+    
 
-    def parse(self):
-        for line in read_csv(self.stream.read(), trailing=","):
-            assert len(line) == 23
-            yield line
+class GPSCSVParser(CSVParser):
+    DATATYPE = "gps_csv"
+    FIELDS = [
+            "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "Course", "Type", "Distance", "Essential"
+        ]

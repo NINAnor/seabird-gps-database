@@ -1,27 +1,24 @@
-import pathlib
-from .parser_gps import GPSParser
-from .parser_pathtrack import PathtrackParser
+import traceback
+import logging
+
+from .parser_base import Parser
+from .parser_gps import GPSParser, GPSCSVParser
+from .parser_pathtrack import PathtrackParser, PathtrackParserNoUnknown
 
 available_parsers = [
     GPSParser,
+    GPSCSVParser,
     PathtrackParser,
+    PathtrackParserNoUnknown,
 ]
 
 
-def detect(stream):
+def detect(stream) -> Parser:
     for parser in available_parsers:
-        parser_instance = parser(stream)
-        if parser_instance.compatible():
-            return parser
-    else:
-        raise NotImplementedError("File not supported")
-
-
-def parse(stream):
-    parser = detect(stream)
-    parser_instance = parser(stream)
-    result = parser_instance.parse()
-    header = next(result)
-    yield "filename," + ",".join(header)
-    for line in result:
-        yield pathlib.Path(stream.name).name + "," + ",".join(line)
+        try:
+            stream.seek(0)
+            return parser(stream)
+        except:
+            logging.warning(traceback.format_exc())
+    
+    raise NotImplementedError("File not supported")

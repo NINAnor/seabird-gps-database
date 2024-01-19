@@ -24,7 +24,7 @@ env = Environment(
     autoescape=select_autoescape()
 )
 
-from parsers.parser import detect, parse
+from parsers.parser import detect
 
 logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
 
@@ -34,9 +34,11 @@ DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", '/data/'))
 
 LOGGERS_PATH = DATA_PATH  / 'loggers'
 SPREADSHEETS_PATH = DATA_PATH  / 'metadata'
+PARQUET_PATH = DATA_PATH / 'parquet'
 
-LOGGERS_PATH.mkdir(exist_ok=True)
-SPREADSHEETS_PATH.mkdir(exist_ok=True)
+PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH, PARQUET_PATH]
+for path in PATHS:
+    path.mkdir(exist_ok=True)
 
 
 logging.debug(os.environ)
@@ -225,17 +227,8 @@ def handle_loggers():
                 output.write(logger_file["content"])
             try:
                 stream = open(str(temp_path))
-                datatype = detect(stream).DATATYPE
-                headers["Content-Type"] = "text/csv"
-                response = requests.post(
-                    POSTGREST_URL + f"/import_logger_data_{datatype}",
-                    headers=headers,
-                    data="\n".join(parse(stream)),
-                )
-                logging.debug(response.text)
-                response.raise_for_status()
-            except requests.exceptions.HTTPError as instance:
-                print_response_error(instance, response, filename=filename)
+                parser = detect(stream)
+                parser.write_parquet(PARQUET_PATH)
             except NotImplementedError:
                 put_error(f"Logger data {filename}: Format not supported")
             except Exception as instance:
