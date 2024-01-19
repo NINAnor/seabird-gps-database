@@ -2,15 +2,13 @@ import traceback
 import logging
 
 from .parser_base import Parser
-from .parser_gps import GPSParser, GPSCSVParser
+from .parser_gps import PARSERS as GPS_PARSERS
 from .parser_pathtrack import PathtrackParser, PathtrackParserNoUnknown
 
 available_parsers = [
-    GPSParser,
-    GPSCSVParser,
     PathtrackParser,
     PathtrackParserNoUnknown,
-]
+] + GPS_PARSERS
 
 
 def detect(stream) -> Parser:

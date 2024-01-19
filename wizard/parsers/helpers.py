@@ -5,6 +5,13 @@ def stream_starts_with(stream, text):
     return chunk == text
 
 
+def stream_chunk_contains(stream, length, text):
+    position = stream.tell()
+    chunk = stream.read(length)
+    stream.seek(position)
+    return text in chunk
+
+
 def read_csv(data, separator=",", newline="\n", trailing=""):
     for line in data.split(newline):
         if not line:

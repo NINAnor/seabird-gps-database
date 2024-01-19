@@ -37,16 +37,17 @@ class CSVParser(Parser):
     DATATYPE = "generic_csv"
     FIELDS = []
     SEPARATOR = ','
+    SKIP_INITIAL_SPACE = True
 
     def __init__(self, stream):
         super().__init__(stream)
         if not self.stream.seekable():
             self._raise_not_supported('Stream not seekable')
 
-        reader = csv.reader(self.stream, delimiter=self.SEPARATOR)
+        reader = csv.reader(self.stream, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
         header = next(reader)
-        if len(header) != len(self.FIELDS):
-            self._raise_not_supported(f"Stream have a number of fields different than expected, {len(header)} != {len(self.FIELDS)}")
+        if header != self.FIELDS:
+            self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
 
         self.stream.seek(0)
-        self.data = pd.read_csv(self.stream, sep=self.SEPARATOR)
+        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR)
