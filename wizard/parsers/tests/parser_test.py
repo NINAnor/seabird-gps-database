@@ -1,7 +1,7 @@
 import pathlib
 import pytest
 import csv
-
+from pyarrow.compute import is_in
 from ..parser import detect
 
 
@@ -21,7 +21,10 @@ def test_parser_success(file, path, format):
     with open(str(path)) as f:
         parser_instance = detect(f)
         assert parser_instance.DATATYPE == format
-        assert parser_instance.as_table()
+        table = parser_instance.as_table()
+        assert table
+        assert is_in([format], table.column('datatype'))
+        assert is_in([parser_instance.__class__.__name__], table.column('parser'))
 
 
 @pytest.mark.parametrize("file,path", testdata_fail)
