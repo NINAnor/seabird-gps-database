@@ -50,4 +50,4 @@ class CSVParser(Parser):
             self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
 
         self.stream.seek(0)
-        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR)
+        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)

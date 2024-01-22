@@ -87,7 +87,7 @@ class GPSUnknownFormatParserWithEmptyColumns(GPSUnknownFormatParser):
             self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
 
         self.stream.seek(0)
-        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR)
+        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 class GPSCatTrackParser(CSVParser):
@@ -118,7 +118,7 @@ class GPSCatTrackParser(CSVParser):
         if header != self.FIELDS:
             self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
 
-        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR)
+        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 class GPS2JMParser(CSVParser):
@@ -158,7 +158,7 @@ class GPS2JMParser(CSVParser):
         if len(header) != len(self.FIELDS):
             self._raise_not_supported(f"Stream have fields different than expected, {len(header)} != {len(self.FIELDS)}")
 
-        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR)
+        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 
