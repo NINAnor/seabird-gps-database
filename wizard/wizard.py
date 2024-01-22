@@ -30,6 +30,9 @@ logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
 
 POSTGREST_URL = os.getenv("POSTGREST_URL", "http://localhost:3000")
 POSTGREST_TOKEN = os.getenv("POSTGREST_TOKEN")
+TO_PARQUET = os.getenv("TO_PARQUET", 'False').lower() in ('true', '1', 't')
+ACCEPTED_EXTENSIONS = os.getenv("ACCEPTED_EXTENSIONS", '.csv,.pos,.gpx,.txt,.log').split(',')
+ACCEPTED_EXTENSIONS += [ext.upper() for ext in ACCEPTED_EXTENSIONS]
 DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", '/data/'))
 
 LOGGERS_PATH = DATA_PATH  / 'loggers'
@@ -209,7 +212,7 @@ def handle_loggers():
     inputs = input_group(
         "Import Loggers",
         [
-            file_upload("Select logger data:", multiple=True, accept=['.csv', '.pos', '.gpx'], name="files"),
+            file_upload("Select logger data:", multiple=True, accept=ACCEPTED_EXTENSIONS, name="files"),
         ]
     )
     logger_files = inputs["files"]
@@ -226,8 +229,9 @@ def handle_loggers():
             with open(str(temp_path), "wb") as output:
                 output.write(logger_file["content"])
             try:
-                parser = detect_file(temp_path)
-                parser.write_parquet(PARQUET_PATH)
+                if TO_PARQUET:
+                    parser = detect_file(temp_path)
+                    parser.write_parquet(PARQUET_PATH)
             except NotImplementedError:
                 put_error(f"Logger data {filename}: Format not supported")
             except Exception as instance:
