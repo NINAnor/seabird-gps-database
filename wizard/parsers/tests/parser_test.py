@@ -7,13 +7,9 @@ from ..parser import detect
 
 TESTS_DATA_PATH = pathlib.Path('./parsers/tests/data')
 
-TEST_FORMAT = [
-    'gps_pathtrack'
-]
-
 testdata_success = []
 for dir in (TESTS_DATA_PATH / 'success').iterdir():
-    if dir.is_dir():
+    if dir.is_dir() and not dir.name.endswith('__ignore'):
         for f in dir.iterdir():
             if not f.is_dir():
                 testdata_success.append((f.name, f, dir.name))
