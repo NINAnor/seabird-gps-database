@@ -2,8 +2,8 @@
 
 import sys
 
-from parsers import parser
+from parsers.parser import detect_file
 
 if __name__ == "__main__":
-    for line in parser.parse(open(sys.argv[1])):
-        print(line)
+    parser = detect_file(sys.argv[1])
+    parser.write_csv(sys.argv[2])

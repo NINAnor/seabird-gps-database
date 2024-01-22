@@ -3,6 +3,7 @@ import pathlib
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pyarrow.csv as pacsw
 
 
 class ParserNotSupported(Exception):
@@ -34,6 +35,9 @@ class Parser:
             raise Exception("Stream has no name and no filename is provided")
 
         pq.write_table(self.as_table(), str(path / f'{filename.stem}_{self.DATATYPE}.parquet'))
+
+    def write_csv(self, path):
+        pacsw.write_csv(self.as_table(), str(path))
 
 
 class CSVParser(Parser):
