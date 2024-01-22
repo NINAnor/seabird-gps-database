@@ -1,3 +1,5 @@
+import re
+
 def stream_starts_with(stream, text):
     position = stream.tell()
     chunk = stream.read(len(text))
@@ -10,6 +12,14 @@ def stream_chunk_contains(stream, length, text):
     chunk = stream.read(length)
     stream.seek(position)
     return text in chunk
+
+
+def stream_chunk_match(stream, length, text):
+    position = stream.tell()
+    chunk = stream.read(length)
+    stream.seek(position)
+    print(chunk)
+    return re.search(text, chunk)
 
 
 def read_csv(data, separator=",", newline="\n", trailing=""):
