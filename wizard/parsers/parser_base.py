@@ -34,7 +34,7 @@ class Parser:
         else:
             raise Exception("Stream has no name and no filename is provided")
 
-        pq.write_table(self.as_table(), str(path / f'{filename.stem}_{self.DATATYPE}.parquet'))
+        pq.write_table(self.as_table(), str(path / f'{filename.stem}.parquet'))
 
     def write_csv(self, path):
         pacsw.write_csv(self.as_table(), str(path))
