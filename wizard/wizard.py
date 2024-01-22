@@ -24,7 +24,7 @@ env = Environment(
     autoescape=select_autoescape()
 )
 
-from parsers.parser import detect
+from parsers.parser import detect_file
 
 logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
 
@@ -226,8 +226,7 @@ def handle_loggers():
             with open(str(temp_path), "wb") as output:
                 output.write(logger_file["content"])
             try:
-                stream = open(str(temp_path))
-                parser = detect(stream)
+                parser = detect_file(temp_path)
                 parser.write_parquet(PARQUET_PATH)
             except NotImplementedError:
                 put_error(f"Logger data {filename}: Format not supported")
