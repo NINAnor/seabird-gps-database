@@ -1,6 +1,4 @@
 -- migrate:up
-alter table logger_instrumentation alter column filename drop not null;
-
 create function safe_cast_bool(p_in text)
    returns bool
 as
