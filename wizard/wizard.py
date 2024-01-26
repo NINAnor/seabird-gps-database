@@ -15,7 +15,7 @@ import orjson
 import requests
 from pywebio import start_server
 from pywebio.input import NUMBER, actions, file_upload, input, input_group
-from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html, put_table, put_warning
+from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html, put_table, put_warning, put_link, put_widget
 from pywebio.session import run_js
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -74,8 +74,24 @@ def print_response_error(instance, response, filename=None):
 def put_reload_button():
     put_button("Upload new data", onclick=lambda: run_js('window.location.reload()'))
 
+tpl = '''
+<div>
+    <h5>Links</h5>
+    <ul>
+    {{#contents}}
+        <li>{{& pywebio_output_parse}}</li>
+    {{/contents}}
+    </ul>
+</div>
+'''
 
 def wizard():
+    put_widget(tpl, {'contents': [
+        put_link('Explore Database', '/pgweb/', new_window=True),
+        put_link('Rest APIs', '/postgrest/', new_window=True),
+        put_link('Uploaded Data', '/data/', new_window=True),
+    ]})
+
     result = actions(
         "What you want to upload?",
         buttons=[
