@@ -229,8 +229,8 @@ def handle_loggers():
             with open(str(temp_path), "wb") as output:
                 output.write(logger_file["content"])
             try:
+                parser = detect_file(temp_path)
                 if TO_PARQUET:
-                    parser = detect_file(temp_path)
                     parser.write_parquet(PARQUET_PATH)
             except NotImplementedError:
                 put_error(f"Logger data {filename}: Format not supported")
