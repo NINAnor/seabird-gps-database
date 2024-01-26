@@ -47,7 +47,7 @@ for path in PATHS:
 logging.debug(os.environ)
 
 
-def print_response_error(instance, response, filename):
+def print_response_error(instance, response, filename=None):
     try:
         body = response.json()
         no_detail = {k:v for k,v in body.items() if k != 'details'}
