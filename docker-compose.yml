@@ -11,9 +11,11 @@ services:
       - 5432:5432
   dbmate:
     build: db
-    command: --wait --no-dump-schema up
     environment:
       DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable"
+    volumes:
+      - ./db/migrations:/db/migrations/
+      - ./db/schema.sql:/db/schema.sql
   postgrest:
     image: postgrest/postgrest:v10.1.2
     environment:
@@ -24,8 +26,6 @@ services:
     build:
       context: wizard
     environment:
-      OPENREFINE_URL: https://openrefine.nina.no
-      OPENREFINE_PUBLIC_URL: http://openrefine.nina.no
       POSTGREST_URL: http://postgrest:3000
       POSTGREST_TOKEN: ${WRITER_TOKEN}
       LOGGING: DEBUG
@@ -33,6 +33,7 @@ services:
     stdin_open: true
     volumes:
       - ./loggers_data:/app/loggers_data
+      - ./data:/data/
   pgweb:
     image: sosedoff/pgweb:latest
     environment:
@@ -42,5 +43,7 @@ services:
     build: nginx
     ports:
       - 8000:80
+    volumes:
+      - ./data:/data/
 volumes:
   pgdata:

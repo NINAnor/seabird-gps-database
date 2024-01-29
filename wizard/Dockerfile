@@ -10,6 +10,8 @@ RUN --mount=type=cache,target=/root/.cache/pdm \
     pdm install --no-self
 
 COPY wizard.py .
+COPY parsers/ parsers/
+COPY templates/ templates/
 
 EXPOSE 8000/TCP
 CMD ["pdm", "run", "./wizard.py"]

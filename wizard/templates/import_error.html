@@ -1,0 +1,48 @@
+
+{% macro render_table(data) %}
+<table>
+    <thead>
+        <tr>
+            <th>Key</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for key, value in data.items() %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>
+                {% if value is mapping %}
+                    {{ render_table(value) }}
+                {% else %}
+                    {{ value }}
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+<div class="alert alert-danger" role="alert" >
+    <h4>Error</h4>
+    <p>{% if filename %}{{ filename }}: {% endif %}{{ title }}</p>
+    <table>
+        <thead>
+            <tr>
+                {% for k in headers %}<th>{{ k }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% for v in body %}<td>{{ v }}</td>{% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    <h5>Details</h5>
+    {% if details is mapping %}
+    {{ render_table(details) }}
+    {% else %}
+    <p>{{ details }}</p>
+    {% endif %}
+</div>

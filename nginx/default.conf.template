@@ -18,6 +18,12 @@ server {
         root   /usr/share/nginx/html;
     }
 
+    location /data/ {
+        autoindex on;
+        autoindex_format html;
+        alias /data/;
+    }
+
     client_max_body_size 300m;
 
     proxy_set_header   X-Real-IP            $remote_addr;
