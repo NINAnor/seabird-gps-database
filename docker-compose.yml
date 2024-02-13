@@ -29,11 +29,14 @@ services:
       POSTGREST_URL: http://postgrest:3000
       POSTGREST_TOKEN: ${WRITER_TOKEN}
       LOGGING: DEBUG
+      TEST_DATA_PATH: /test_data
     tty: true
     stdin_open: true
     volumes:
       - ./loggers_data:/app/loggers_data
       - ./data:/data/
+      - ./wizard/parsers:/app/parsers
+      - ./test_data:/test_data
   pgweb:
     image: sosedoff/pgweb:latest
     environment:

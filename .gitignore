@@ -1,2 +1,7 @@
 # Secrets
 secrets/
+test_data/fail/*
+!test_data/fail/.gitkeep
+
+test_data/success/*/*
+!test_data/success/*/.gitkeep

@@ -1,17 +1,20 @@
 import pathlib
 import pytest
-import csv
+import os
 from pyarrow.compute import is_in
 from ..parser import detect_file
 
 
-TESTS_DATA_PATH = pathlib.Path('./parsers/tests/data')
+TESTS_DATA_PATH = pathlib.Path(os.environ.get('TEST_DATA_PATH'))
+IGNORED_FILES = [
+    '.gitkeep',
+]
 
 testdata_success = []
 for dir in (TESTS_DATA_PATH / 'success').iterdir():
     if dir.is_dir() and not dir.name.endswith('__ignore'):
         for f in dir.iterdir():
-            if not f.is_dir():
+            if not f.is_dir() and f.name not in IGNORED_FILES:
                 testdata_success.append((f.name, f, dir.name))
 
 testdata_fail = [(f.name, f) for f in (TESTS_DATA_PATH / 'fail').iterdir() if not f.is_dir()]
