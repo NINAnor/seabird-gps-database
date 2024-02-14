@@ -12,7 +12,39 @@ class GPXParser(Parser):
         "elevation",
         "time",
         "satellites",
+        "horizontal_dilution", #hdop
+        "course",
+        "speed",
+        "type",
+        "position_dilution", #pdop
     ]
+
+    MAPPINGS = {
+        "id": None,
+        "date": "date",
+        "time": "time",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "altitude": "elevation",
+        "speed_km_h": "speed",
+        "type": "type",
+        "distance": None,
+        "course": "course",
+        "hdop": "horizontal_dilution",
+        "pdop": "position_dilution",
+        "satellites_count": "satellites",
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
+    def normalize_data(self):
+        self.data['datetime'] = pd.to_datetime(self.data['time'])
+        self.data['date'] = self.data['datetime'].dt.date
+        self.data['time'] = self.data['datetime'].dt.time
+        return super().normalize_data()
 
     def __init__(self, stream):
         super().__init__(stream)

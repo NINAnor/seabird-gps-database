@@ -6,6 +6,28 @@ from .parser_base import CSVParser
 from .helpers import stream_starts_with, stream_chunk_contains
 
 
+GPS_OUTPUT = [
+    "id",
+    "date",
+    "time",
+    "latitude",
+    "longitude",
+    "altitude",
+    "speed_km_h",
+    "type",
+    "distance",
+    "course",
+    "hdop",
+    "pdop",
+    "satellites_count",
+    "temperature",
+    "solar_I_mA",
+    "bat_soc_pct",
+    "ring_nr",
+    "trip_nr",
+]
+
+
 class GPSParser(CSVParser):
     DATATYPE = "gps"
     FIELDS = [
@@ -34,7 +56,28 @@ class GPSParser(CSVParser):
             "depth_m",
             "",
         ]
-    
+
+    MAPPINGS = {
+        "id": "device_id",
+        "date": "UTC_date",
+        "time": "UTC_time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude_m",
+        "speed_km_h": "speed_km_h",
+        "type": "datatype",
+        "distance": None,
+        "course": "direction_deg",
+        "hdop": "hdop",
+        "pdop": None,
+        "satellites_count": "satcount",
+        "temperature": "temperature_C",
+        "solar_I_mA": "solar_I_mA",
+        "bat_soc_pct": "bat_soc_pct",
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
 
 class IGotU_GT_Parser(CSVParser):
     '''
@@ -44,6 +87,27 @@ class IGotU_GT_Parser(CSVParser):
     FIELDS = [
             "Date", "Time", "Latitude", "Longitude", "Altitude", "Speed", "Course", "Type", "Distance", "Essential"
         ]
+    
+    MAPPINGS = {
+        "id": None,
+        "date": "Date",
+        "time": "Time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude",
+        "speed_km_h": "Speed",
+        "type": "Type",
+        "distance": "Distance",
+        "course": "Course",
+        "hdop": None,
+        "pdop": None,
+        "satellites_count": None,
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
 
 
 class IGotU_GT_TabSeparatedParser(IGotU_GT_Parser):
@@ -62,6 +126,27 @@ class GPSUnknownFormatParser(CSVParser):
     SEPARATOR = '\t'
     FIELDS = [
             "DataID", "ID","Ring_nr","Date","Time","Altitude","Speed","Course","HDOP","Latitude","Longitude","TripNr"]
+    
+    MAPPINGS = {
+        "id": "DataID",
+        "date": "Date",
+        "time": "Time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude",
+        "speed_km_h": "Speed",
+        "type": None,
+        "distance": None,
+        "course": "Course",
+        "hdop": "HDOP",
+        "pdop": None,
+        "satellites_count": None,
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": "Ring_nr",
+        "trip_nr": "TripNr",
+    }
 
 
 class GPSUnknownFormatParserWithEmptyColumns(GPSUnknownFormatParser):
@@ -100,6 +185,27 @@ class GPSCatTrackParser(CSVParser):
     FIELDS = [
 "Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "Temperature [C]", "Speed [km/h]", "TTFF", "SNR", "tbd"]
     
+    MAPPINGS = {
+        "id": "",
+        "date": "Date",
+        "time": "Time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude",
+        "speed_km_h": "Speed [km/h]",
+        "type": None,
+        "distance": None,
+        "course": None,
+        "hdop": "HDOP",
+        "pdop": "PDOP",
+        "satellites_count": "Satellites",
+        "temperature": "Temperature [C]",
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
     def __init__(self, stream):
         self.stream = stream
         self.data = []
@@ -133,6 +239,30 @@ class GPS2JMParser(CSVParser):
         "[EOF]",
         "---- End of data ----",
     ]
+
+
+    # TODO: understand the fields first
+    # MAPPINGS = {
+    #     "id": "",
+    #     "date": None,
+    #     "time": None,
+    #     "latitude": None,
+    #     "longitude": None,
+    #     "altitude": None,
+    #     "speed_km_h": None,
+    #     "type": None,
+    #     "distance": None,
+    #     "course": None,
+    #     "hdop": None,
+    #     "pdop": None,
+    #     "satellites_count": None,
+    #     "direction_deg": None,
+    #     "temperature": None,
+    #     "solar_I_mA": None,
+    #     "bat_soc_pct": None,
+    #     "ring_nr": None,
+    #     "trip_nr": None,
+    # }
     
     def __init__(self, stream):
         self.stream = stream

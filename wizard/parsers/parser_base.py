@@ -1,10 +1,13 @@
 import csv
 import pathlib
+import os
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow.csv as pacsw
 
+
+MAX_SPEED = float(os.environ.get('MAX_SPEED', default="10"))
 
 class ParserNotSupported(Exception):
     pass
@@ -12,6 +15,9 @@ class ParserNotSupported(Exception):
 
 class Parser:
     DATATYPE = "generic_parser"
+    OUTLIERS = {
+        "speed_km_h": lambda x: x > MAX_SPEED
+    }
 
     def __init__(self, stream):
         self.stream = stream
@@ -20,7 +26,41 @@ class Parser:
     def _raise_not_supported(self, text):
         raise ParserNotSupported(f'{self.__class__.__name__}: {text}')
     
+    def get_mappings(self):
+        return getattr(self, 'MAPPINGS', {}) 
+    
+    def get_outliers(self):
+        return getattr(self, 'OUTLIERS', {})
+    
+    def normalize_data(self):
+        '''
+        Remap values parsed
+        '''
+        mappings = self.get_mappings()
+        if mappings:
+            data = self.data
+            df = pd.DataFrame(columns=mappings.keys(), index=range(1, data.size))
+
+            for k,v in mappings.items():
+                if v:
+                    df[k] = data[v]
+
+            self.data = df
+
+    def detect_outliers(self):
+        '''
+        Apply conditions on fields to check for outliers
+        '''
+        outliers = self.get_outliers()
+        if outliers:
+            def check_conditions(row):
+                return any(condition(row[k]) for k, condition in outliers.items() if k in self.data)
+
+            self.data['outlier'] = self.data.apply(check_conditions, axis=1)
+
     def as_table(self) -> pa.Table:
+        self.normalize_data()
+        self.detect_outliers()
         table = pa.Table.from_pandas(self.data, preserve_index=False)
         table = table.append_column('datatype', pa.array([self.DATATYPE] * len(table), pa.string()))
         table = table.append_column('parser', pa.array([self.__class__.__name__] * len(table), pa.string()))

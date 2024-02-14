@@ -29,6 +29,32 @@ class PathtrackParser(Parser):
     )
     SEPARATOR = ','
 
+    MAPPINGS = {
+        "id": None,
+        "date": "date",
+        "time": "time",
+        "latitude": "lat",
+        "longitude": "lon",
+        "altitude": "altitude",
+        "speed_km_h": None,
+        "type": None,
+        "distance": None,
+        "course": None,
+        "hdop": "accuracy",
+        "pdop": None,
+        "satellites_count": "satellites",
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
+    def normalize_data(self):
+        self.data['time'] = self.data['hour'].astype(str) + ':' + self.data['minute'].astype(str) + ":" + self.data['second'].astype(str)
+        self.data['date'] = self.data['day'].astype(str) + '/' + self.data['month'].astype(str) + ":" + self.data['year'].astype(str)
+        return super().normalize_data()
+
     def __init__(self, stream):
         super().__init__(stream)
 
