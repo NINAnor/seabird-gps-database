@@ -203,6 +203,8 @@ def handle_metadata():
         response.raise_for_status()
     except Exception as instance:
         print_response_error(instance=instance, response=response)
+        put_reload_button()
+        return
     else:
         put_success("Data has been imported sucessfully.")
 
