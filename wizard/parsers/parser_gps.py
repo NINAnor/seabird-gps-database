@@ -182,6 +182,7 @@ class GPSCatTrackParser(CSVParser):
     '''
     DATATYPE = "gps_cattrack"
     DIVIDER = "--------\n"
+    START_WITH = "Name:CatLog"
     FIELDS = [
 "Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "Temperature [C]", "Speed [km/h]", "TTFF", "SNR", "tbd"]
     
@@ -213,11 +214,14 @@ class GPSCatTrackParser(CSVParser):
         if not self.stream.seekable():
             self._raise_not_supported('Stream not seekable')
         
-        if not stream_starts_with(self.stream, "Name:CatLog"):
+        if self.START_WITH and not stream_starts_with(self.stream, self.START_WITH):
             self._raise_not_supported(f"Stream must start with Name:CatLog")
 
-        _intro, data = self.stream.read().split(self.DIVIDER)
-        content = io.StringIO(data)
+        if self.DIVIDER:
+            _intro, data = self.stream.read().split(self.DIVIDER)
+            content = io.StringIO(data)
+        else:
+            content = self.stream
 
         reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
         header = next(reader)
@@ -225,6 +229,34 @@ class GPSCatTrackParser(CSVParser):
             self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
 
         self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+
+
+class GPSCatTrackNoDivider(GPSCatTrackParser):
+    DIVIDER = None
+    START_WITH = None
+    FIELDS = [
+"Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP"]
+    
+    MAPPINGS = {
+        "id": "",
+        "date": "Date",
+        "time": "Time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude",
+        "speed_km_h": None,
+        "type": None,
+        "distance": None,
+        "course": None,
+        "hdop": "HDOP",
+        "pdop": "PDOP",
+        "satellites_count": "Satellites",
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
 
 
 class GPS2JMParser(CSVParser):
@@ -300,4 +332,5 @@ PARSERS = [
     IGotU_GT_Parser,
     IGotU_GT_TabSeparatedParser,
     GPS2JMParser,
+    GPSCatTrackNoDivider,
 ]

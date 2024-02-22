@@ -9,10 +9,16 @@ TESTS_DATA_PATH = pathlib.Path(os.environ.get('TEST_DATA_PATH'))
 IGNORED_FILES = [
     '.gitkeep',
 ]
+IGNORED_DIRS = [
+    # 'gps_gpx',
+    # 'accelerometer',
+    # 'gps_pathtrack',
+    # 'tdr',
+]
 
 testdata_success = []
 for dir in (TESTS_DATA_PATH / 'success').iterdir():
-    if dir.is_dir() and not dir.name.endswith('__ignore'):
+    if dir.is_dir() and dir.name not in IGNORED_DIRS:
         for f in dir.iterdir():
             if not f.is_dir() and f.name not in IGNORED_FILES:
                 testdata_success.append((f.name, f, dir.name))
