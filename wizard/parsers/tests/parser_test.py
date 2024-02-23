@@ -11,6 +11,10 @@ IGNORED_FILES = [
 ]
 IGNORED_DIRS = [
     # 'gps_gpx',
+    # 'gps_cattrack',
+    # 'gps_igotugl',
+    # 'gps_unknown',
+    # 'gps_2jm',
     # 'accelerometer',
     # 'gps_pathtrack',
     # 'tdr',

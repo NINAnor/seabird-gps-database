@@ -5,7 +5,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow.csv as pacsw
-
+import logging
 
 MAX_SPEED = float(os.environ.get('MAX_SPEED', default="10"))
 
@@ -88,6 +88,10 @@ class CSVParser(Parser):
 
     def __init__(self, stream):
         super().__init__(stream)
+
+        if 'b' in self.stream.mode:
+            self._raise_not_supported('Stream is binary')
+
         if not self.stream.seekable():
             self._raise_not_supported('Stream not seekable')
 
@@ -98,3 +102,26 @@ class CSVParser(Parser):
 
         self.stream.seek(0)
         self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+
+
+class ExcelParser(Parser):
+    DATATYPE = "generic_excel"
+    FIELDS = []
+    SKIPROWS = 0
+
+    def __init__(self, stream):
+        super().__init__(stream)
+
+        if not 'b' in self.stream.mode:
+            self._raise_not_supported('Stream is not binary')
+
+        if 'xls' not in pathlib.Path(self.stream.name).suffix:
+            self._raise_not_supported('Extension is not xls')
+
+        self.data = pd.read_excel(self.stream, header=0, index_col=False, skiprows=self.SKIPROWS)
+        if set(self.data.columns.values) != set(self.FIELDS):
+            self._raise_not_supported('Field name not matching: ' + str({
+                    "missing": list(set(self.data.columns.values) - set(self.FIELDS)),
+                    "extra": list(set(self.FIELDS) - set(self.data.columns.values)),
+                })
+            )
