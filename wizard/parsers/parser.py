@@ -47,7 +47,6 @@ def detect(stream) -> Parser:
 def detect_file(path):
     encoding = detect_encoding(path)
     if encoding:
-        print('here...')
         with open(path, 'r', encoding=encoding) as stream:
             return detect(stream)
     else:
