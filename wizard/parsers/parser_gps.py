@@ -286,6 +286,11 @@ class GPSCatTrackNoDivider(GPSCatTrackParser):
     }
 
 
+class GPSCatTrackNoDividerTTF(GPSCatTrackNoDivider):
+    FIELDS = [
+"Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "TTF [s]"]
+
+
 class GPS2JMParser(CSVParser):
     '''
     Parser for 2Jm format
@@ -361,4 +366,5 @@ PARSERS = [
     GPS2JMParser,
     GPSCatTrackNoDivider,
     GPSUnknownFormatParserFromExcel,
+    GPSCatTrackNoDividerTTF,
 ]
