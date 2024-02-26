@@ -8,7 +8,7 @@ from .parser_accelerometer import PARSERS as ACCELEROMETER_PARSERS
 from .parser_tdr import PARSERS as TDR_PARSERS
 from .parser_gpx import GPXParser
 from .parser_pathtrack import PathtrackParser, PathtrackParserNoUnknown
-from .parser_excel import GPSUnknownFormatExcelParser
+# from .parser_excel import GPSUnknownFormatExcelParser
 
 available_parsers = [
     PathtrackParser,
@@ -17,7 +17,7 @@ available_parsers = [
 ] + GPS_PARSERS + ACCELEROMETER_PARSERS + TDR_PARSERS
 
 binary_parsers = [
-    GPSUnknownFormatExcelParser,
+    # GPSUnknownFormatExcelParser,
 ]
 
 
