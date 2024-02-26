@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:d504b9b51672204f856deb5a9f4643ea77673c28978cae783f3503245809d2d0"
+content_hash = "sha256:f221c0f86e96e886da92df79dcf494cf8b6b2de7070b6da0295dcfa5e8b447b4"
 
 [[package]]
 name = "certifi"
@@ -511,6 +511,19 @@ dependencies = [
 files = [
     {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
     {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1"},
+]
+
+[[package]]
+name = "sentry-sdk"
+version = "1.40.5"
+summary = "Python client for Sentry (https://sentry.io)"
+dependencies = [
+    "certifi",
+    "urllib3>=1.26.11; python_version >= \"3.6\"",
+]
+files = [
+    {file = "sentry-sdk-1.40.5.tar.gz", hash = "sha256:d2dca2392cc5c9a2cc9bb874dd7978ebb759682fe4fe889ee7e970ee8dd1c61e"},
+    {file = "sentry_sdk-1.40.5-py2.py3-none-any.whl", hash = "sha256:d188b407c9bacbe2a50a824e1f8fb99ee1aeb309133310488c570cb6d7056643"},
 ]
 
 [[package]]

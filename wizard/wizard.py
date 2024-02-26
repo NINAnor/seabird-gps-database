@@ -19,6 +19,12 @@ from pywebio.output import clear, put_error, put_success, put_text, put_button, 
 from pywebio.session import run_js
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+if os.getenv("SENTRY_DSN"):
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN")
+    )
+
 env = Environment(
     loader=FileSystemLoader("./templates"),
     autoescape=select_autoescape()

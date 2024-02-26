@@ -15,6 +15,7 @@ dependencies = [
     "pyarrow>=14.0.2",
     "pandas>=2.0.3",
     "chardet>=5.2.0",
+    "sentry-sdk>=1.40.5",
 ]
 requires-python = ">=3.8"
 license = {text = "GPLv3"}
