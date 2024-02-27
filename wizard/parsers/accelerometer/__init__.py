@@ -3,9 +3,8 @@ import csv
 import io
 import re
 import datetime
-import logging
-from .parser_base import Parser
-from .helpers import stream_starts_with
+from parsers.parser_base import Parser
+from parsers.helpers import stream_starts_with
 
 
 class AcceleratorParser(Parser):

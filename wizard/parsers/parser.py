@@ -3,18 +3,12 @@ import logging
 from chardet.universaldetector import UniversalDetector
 
 from .parser_base import Parser, ParserNotSupported
-from .parser_gps import PARSERS as GPS_PARSERS
-from .parser_accelerometer import PARSERS as ACCELEROMETER_PARSERS
-from .parser_tdr import PARSERS as TDR_PARSERS
-from .parser_gpx import GPXParser
-from .parser_pathtrack import PathtrackParser, PathtrackParserNoUnknown
+from .gps import PARSERS as GPS_PARSERS
+from .accelerometer import PARSERS as ACCELEROMETER_PARSERS
+from .tdr import PARSERS as TDR_PARSERS
 # from .parser_excel import GPSUnknownFormatExcelParser
 
-available_parsers = [
-    PathtrackParser,
-    PathtrackParserNoUnknown,
-    GPXParser,
-] + GPS_PARSERS + ACCELEROMETER_PARSERS + TDR_PARSERS
+available_parsers = GPS_PARSERS + ACCELEROMETER_PARSERS + TDR_PARSERS
 
 binary_parsers = [
     # GPSUnknownFormatExcelParser,

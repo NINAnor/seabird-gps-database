@@ -1,7 +1,7 @@
 import pandas as pd
 import gpxpy
-from .helpers import stream_chunk_contains
-from .parser_base import Parser
+from parsers.helpers import stream_chunk_contains
+from parsers.parser_base import Parser
 
 
 class GPXParser(Parser):

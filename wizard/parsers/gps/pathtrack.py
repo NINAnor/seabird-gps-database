@@ -1,8 +1,8 @@
 import csv
 import io
 import pandas as pd
-from .helpers import stream_starts_with
-from .parser_base import Parser, ParserNotSupported
+from parsers.helpers import stream_starts_with
+from parsers.parser_base import Parser, CSVParser
 
 
 class PathtrackParser(Parser):
@@ -93,3 +93,42 @@ class PathtrackParserNoUnknown(PathtrackParser):
         "accuracy",  # HDOP?
         "battery",
     )
+
+class CSVPathtrack(CSVParser):
+    DATATYPE = "gps_pathtrack"
+    FIELDS = [
+        "day","month","year","hour","minute","second","second_of_the_day","satellites","latitude","longitude","altitude","clock_offset","accuracy_indicator","battery","processing_parameterA","processing_parameterB"
+    ]
+    SEPARATOR = ';'
+    MAPPINGS = {
+        "id": None,
+        "date": "date",
+        "time": "time",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "altitude": "altitude",
+        "speed_km_h": None,
+        "type": None,
+        "distance": None,
+        "course": None,
+        "hdop": "accuracy_indicator",
+        "pdop": None,
+        "satellites_count": "satellites",
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
+    def normalize_data(self):
+        self.data['time'] = self.data['hour'].astype(str) + ':' + self.data['minute'].astype(str) + ":" + self.data['second'].astype(str)
+        self.data['date'] = self.data['day'].astype(str) + '/' + self.data['month'].astype(str) + ":" + self.data['year'].astype(str)
+        return super().normalize_data()
+
+
+PARSERS = [
+    PathtrackParser,
+    PathtrackParserNoUnknown,
+    CSVPathtrack,
+]
