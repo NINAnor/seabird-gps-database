@@ -31,7 +31,7 @@ def detect(stream) -> Parser:
                 stream.seek(0)
                 return parser(stream)
             except ParserNotSupported:
-                logging.debug('Expected: ' + traceback.format_exc())
+                logging.warning('Expected: ' + traceback.format_exc())
             except:
                 logging.error(traceback.format_exc())
     

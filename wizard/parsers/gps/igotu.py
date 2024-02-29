@@ -63,33 +63,16 @@ class GPS_IGOTUGL(IGotU_GT_Parser):
         "ring_nr": None,
         "trip_nr": None,
     }
-    
 
 
-class GPS_IGOTUGL_SIMPLER(IGotU_GT_Parser):
+class GPS_IGOTUGL_INFO(GPS_IGOTUGL):
+    FIELDS = [
+"Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "TTF [s]", "Info"]
+
+class GPS_IGOTUGL_SIMPLER(GPS_IGOTUGL):
     FIELDS = [
 "Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP"]
     
-    MAPPINGS = {
-        "id": "",
-        "date": "Date",
-        "time": "Time",
-        "latitude": "Latitude",
-        "longitude": "Longitude",
-        "altitude": "Altitude",
-        "speed_km_h": None,
-        "type": None,
-        "distance": None,
-        "course": None,
-        "hdop": "HDOP",
-        "pdop": "PDOP",
-        "satellites_count": "Satellites",
-        "temperature": None,
-        "solar_I_mA": None,
-        "bat_soc_pct": None,
-        "ring_nr": None,
-        "trip_nr": None,
-    }
 
 
 PARSERS = [
@@ -97,4 +80,5 @@ PARSERS = [
     IGotU_GT_TabSeparatedParser,
     GPS_IGOTUGL,
     GPS_IGOTUGL_SIMPLER,
+    GPS_IGOTUGL_INFO,
 ]

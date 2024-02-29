@@ -4,7 +4,7 @@ import csv
 import pandas as pd
 
 from parsers.parser_base import CSVParser
-from parsers.helpers import stream_starts_with
+from parsers.helpers import stream_starts_with, stream_chunk_contains
 
 
 class GPSCatTrackParser(CSVParser):
@@ -50,8 +50,11 @@ class GPSCatTrackParser(CSVParser):
             self._raise_not_supported(f"Stream must start with Name:CatLog")
 
         if self.DIVIDER:
-            _intro, data = self.stream.read().split(self.DIVIDER)
-            content = io.StringIO(data)
+            if stream_chunk_contains(self.stream, 500, self.DIVIDER):
+                _intro, data = self.stream.read().split(self.DIVIDER)
+                content = io.StringIO(data)
+            else:
+                self._raise_not_supported(f"Stream doesn't have the divider {self.DIVIDER}")
         else:
             content = self.stream
 
@@ -62,6 +65,63 @@ class GPSCatTrackParser(CSVParser):
 
         self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
+
+class GPSCatTrack2(GPSCatTrackParser):
+    FIELDS = [
+"Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "TTF [s]", "Info"]
+    DIVIDER = "-----\n"
+    
+    MAPPINGS = {
+        "id": "",
+        "date": "Date",
+        "time": "Time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude",
+        "speed_km_h": None,
+        "type": None,
+        "distance": None,
+        "course": None,
+        "hdop": "HDOP",
+        "pdop": "PDOP",
+        "satellites_count": "Satellites",
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
+
+
+class GPSCatTrack3(GPSCatTrackParser):
+    FIELDS = [
+"Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "TTF [s]", "Info"]
+    DIVIDER = "--------\n"
+    
+    MAPPINGS = {
+        "id": "",
+        "date": "Date",
+        "time": "Time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "Altitude",
+        "speed_km_h": None,
+        "type": None,
+        "distance": None,
+        "course": None,
+        "hdop": "HDOP",
+        "pdop": "PDOP",
+        "satellites_count": "Satellites",
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
+
 PARSERS = [
     GPSCatTrackParser,
+    GPSCatTrack2,
+    GPSCatTrack3,
 ]
