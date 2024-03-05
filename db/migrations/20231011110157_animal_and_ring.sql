@@ -16,33 +16,37 @@ create table ring(
 );
 
 grant select on animal, ring to web_anon;
-grant insert on animal, ring to writer;
+grant select, insert on animal, ring to writer;
 
 create function import_animal_and_ring(new import) returns void language plpgsql
 as $$
 declare
-    animal text;
+    animal_id text;
 begin
     if new.old_ring_number is null then
-        animal = new.ring_number;
+        animal_id = new.ring_number;
     else
-        select animal into strict animal
-          from ring
-         where id = new.old_ring_number;
+        select animal into strict animal_id
+        from ring
+        where id = new.old_ring_number;
     end if;
     insert into animal values(
-        animal,
+        animal_id,
         new.species,
         new.morph,
         new.subspecies
     ) on conflict do nothing;
     insert into ring values(
         new.ring_number,
-        animal,
+        animal_id,
         new.euring_code,
         new.colour_ring_colour,
         new.colour_ring_code
     ) on conflict do nothing;
+exception 
+    when no_data_found then raise exception using
+        errcode = '22000',
+        message = 'Old ring number specified, but not present in the database';
 end;
 $$;
 
