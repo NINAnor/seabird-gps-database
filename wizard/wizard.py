@@ -13,7 +13,7 @@ import shutil
 import openpyxl
 import orjson
 import requests
-from pywebio import start_server
+from pywebio import start_server, config
 from pywebio.input import NUMBER, actions, file_upload, input, input_group
 from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html, put_table, put_warning, put_link, put_widget
 from pywebio.session import run_js
@@ -111,6 +111,8 @@ def wizard():
     else:
         put_reload_button()
     
+if os.getenv("SENTRY_DSN"):
+    wizard = config(js_file="/data/scripts/sentry.js")(wizard)
 
 def handle_metadata():
     fields = []
