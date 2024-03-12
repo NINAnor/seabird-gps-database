@@ -95,6 +95,9 @@ class GPSCatTrack2(GPSCatTrackParser):
 
 
 class GPSCatTrack3(GPSCatTrackParser):
+    '''
+    This CatTrack logger has a wrong number of columns, 2 are missing
+    '''
     FIELDS = [
 "Date", "Time", "Latitude", "Longitude", "Altitude", "Satellites", "HDOP", "PDOP", "TTF [s]", "Info"]
     DIVIDER = "--------\n"
@@ -119,6 +122,35 @@ class GPSCatTrack3(GPSCatTrackParser):
         "ring_nr": None,
         "trip_nr": None,
     }
+
+    def __init__(self, stream):
+        self.stream = stream
+        self.data = []
+
+        if not self.stream.seekable():
+            self._raise_not_supported('Stream not seekable')
+        
+        if self.START_WITH and not stream_starts_with(self.stream, self.START_WITH):
+            self._raise_not_supported(f"Stream must start with Name:CatLog")
+
+        if self.DIVIDER:
+            if stream_chunk_contains(self.stream, 500, self.DIVIDER):
+                _intro, data = self.stream.read().split(self.DIVIDER)
+                content = io.StringIO(data)
+            else:
+                self._raise_not_supported(f"Stream doesn't have the divider {self.DIVIDER}")
+        else:
+            content = self.stream
+
+        reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
+        header = next(reader)
+        if header != self.FIELDS:
+            self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
+
+        # Ensure that the headers are present, then ignore them
+        names = self.FIELDS[:-2]
+
+        self.data = pd.read_csv(content, header=0, names=names, sep=self.SEPARATOR, index_col=False)
 
 PARSERS = [
     GPSCatTrackParser,
