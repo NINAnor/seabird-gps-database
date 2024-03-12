@@ -9,6 +9,9 @@ import json
 import pathlib
 import tempfile
 import shutil
+import datetime
+from dateutil import parser
+from collections import defaultdict
 
 import openpyxl
 import orjson
@@ -49,6 +52,34 @@ PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH, PARQUET_PATH]
 for path in PATHS:
     path.mkdir(exist_ok=True)
 
+
+def fix_string(value):
+    return value.strip() if isinstance(value, str) else value
+
+
+def fix_dates(value):
+    if isinstance(value, datetime.datetime):
+        return value.strftime("%Y-%m-%d")
+    elif isinstance(value, str):
+        return parser.parse(value)
+    else:
+        return value
+
+
+FIX_COLUMNS = defaultdict(lambda: fix_string, {
+    'gps_startup_date': fix_dates,
+    'gps_deployment_date': fix_dates,
+    'gps_retrieval_date': fix_dates,
+    'gls_startup_date_gmt': fix_dates,
+    'gls_deployment_date': fix_dates,
+    'gls_retrieval_date': fix_dates,
+    'tdr_startup_date': fix_dates, 
+    'tdr_deployment_date': fix_dates,
+    'tdr_retrieval_date': fix_dates,
+    'other_sensor_startup_date': fix_dates, 
+    'other_sensor_deployment_date': fix_dates,
+    'other_sensor_retrieval_date': fix_dates,
+})
 
 logging.debug(os.environ)
 
@@ -183,10 +214,10 @@ def handle_metadata():
 
         logging.debug(header)
         for row in rows:
-            row = [cell.value.strip() if isinstance(cell.value, str) else cell.value for cell in row]
+            row = [cell.value for cell in row]
             if any(row):
                 logging.debug(row)
-                data.append({k:v for k,v in zip(header, row) if k in expected_fields})
+                data.append({k: FIX_COLUMNS[k](v) for k,v in zip(header, row) if k in expected_fields})
             elif MAX_CONSECUTIVE_EMPTY_LINES > 0:
                 MAX_CONSECUTIVE_EMPTY_LINES -= 1
             else:
