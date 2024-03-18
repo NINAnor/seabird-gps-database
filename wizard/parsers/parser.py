@@ -23,7 +23,7 @@ def detect_file(path):
             logging.info(f'Parsed with {parser}')
             return result
         except ParserNotSupported:
-            logging.warning('Expected: ' + traceback.format_exc())
+            logging.debug('Expected: ' + traceback.format_exc())
         except:
             logging.error(traceback.format_exc())
     
