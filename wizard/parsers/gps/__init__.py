@@ -8,7 +8,8 @@ from .pathtrack import PARSERS as PATHTRACK
 from .ho11 import PARSERS as HO11
 from .axytrek import PARSERS as AXYTREK
 from .interrex import PARSERS as INTERREX
+from .ornitela import PARSERS as ORNITELA
 
 PARSERS = [
     GPXParser,
-] + IGOUT + CATLOG + BASE + JM + UNKNOWN + PATHTRACK + HO11 + AXYTREK + INTERREX
+] + IGOUT + CATLOG + BASE + JM + UNKNOWN + PATHTRACK + HO11 + AXYTREK + INTERREX + ORNITELA
