@@ -3,6 +3,7 @@ import pytest
 import os
 from pyarrow.compute import is_in
 from ..parser import detect_file
+import logging
 
 
 TESTS_DATA_PATH = pathlib.Path(os.environ.get('TEST_DATA_PATH'))
@@ -15,9 +16,11 @@ IGNORED_DIRS = [
     # 'gps_igotugl',
     # 'gps_unknown',
     # 'gps_2jm',
-    # 'accelerometer',
+    'accelerometer',
     # 'gps_pathtrack',
-    # 'tdr',
+    'tdr',
+    # 'gps_ho11',
+    'gps_axytrek',
 ]
 
 testdata_success = []
@@ -35,8 +38,8 @@ def test_parser_success(file, path, format):
     assert parser_instance.DATATYPE == format
     table = parser_instance.as_table()
     assert table
-    assert is_in([format], table.column('datatype'))
-    assert is_in([parser_instance.__class__.__name__], table.column('parser'))
+    assert is_in([format], table.column('_datatype'))
+    assert is_in([parser_instance.__class__.__name__], table.column('_parser'))
 
 
 @pytest.mark.parametrize("file,path", testdata_fail)

@@ -88,8 +88,8 @@ class Parser:
         self.normalize_data()
         # self.detect_outliers()
         table = pa.Table.from_pandas(self.data, preserve_index=False)
-        table = table.append_column('datatype', pa.array([self.DATATYPE] * len(table), pa.string()))
-        table = table.append_column('parser', pa.array([self.__class__.__name__] * len(table), pa.string()))
+        table = table.append_column('_datatype', pa.array([self.DATATYPE] * len(table), pa.string()))
+        table = table.append_column('_parser', pa.array([self.__class__.__name__] * len(table), pa.string()))
         return table
     
     def write_parquet(self, path: pathlib.Path, filename: str = None):
