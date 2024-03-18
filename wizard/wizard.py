@@ -269,7 +269,7 @@ def handle_loggers():
     inputs = input_group(
         "Import Loggers",
         [
-            file_upload("Select logger data:", multiple=True, accept=ACCEPTED_EXTENSIONS, name="files"),
+            file_upload("Select logger data:", multiple=True, accept=ACCEPTED_EXTENSIONS, name="files", max_size='800M'),
         ]
     )
     logger_files = inputs["files"]
@@ -302,4 +302,4 @@ def handle_loggers():
 
 
 if __name__ == "__main__":
-    start_server(wizard, port=8000, debug=True)
+    start_server(wizard, port=8000, debug=True, max_payload_size='800M')
