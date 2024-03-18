@@ -1,7 +1,7 @@
 import pandas as pd
 import csv
 import io
-from parsers.parser_base import Parser, Parsable
+from parsers.parser_base import Parser, Parsable, CSVParser
 from parsers.helpers import stream_chunk_match, stream_starts_with
 import pyarrow.csv as pacsv
 
@@ -118,8 +118,18 @@ class PathtrackPressParser(Parser):
 
 
 
+class SimpleTDR(CSVParser):
+    DATATYPE = "tdr"
+    FIELDS = [
+        "Time Stamp",
+        "Pressure",
+        "Temp",
+    ]
+
+
 PARSERS = [
     TDRParser,
     TDR2Parser,
     PathtrackPressParser,
+    SimpleTDR,
 ]
