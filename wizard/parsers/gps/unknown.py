@@ -1,20 +1,13 @@
 import pandas as pd
 import csv
 
-from parsers.parser_base import CSVParser, Parsable
+from parsers.parser_base import CSVParser, Parsable, Parser
 
 
-class GPSUnknownFormatParser(CSVParser):
-    '''
-    Parser for a format, its a GPS CSV like format
-    with the following fields
-    '''
-    DATATYPE = "gps_unknown"
-    SEPARATOR = '\t'
-    FIELDS = [
+FIELDS =[
             "DataID", "ID","Ring_nr","Date","Time","Altitude","Speed","Course","HDOP","Latitude","Longitude","TripNr"]
-    
-    MAPPINGS = {
+
+MAPPINGS = {
         "id": "DataID",
         "date": "Date",
         "time": "Time",
@@ -35,13 +28,30 @@ class GPSUnknownFormatParser(CSVParser):
         "trip_nr": "TripNr",
     }
 
-
-
-class GPSUnknownFormatParserWithEmptyColumns(GPSUnknownFormatParser):
+class GPSUnknownFormatParser(CSVParser):
     '''
     Parser for a format, its a GPS CSV like format
     with the following fields
     '''
+    DATATYPE = "gps_unknown"
+    SEPARATOR = '\t'
+    FIELDS = FIELDS
+    
+    MAPPINGS = MAPPINGS
+
+
+
+class GPSUnknownFormatParserWithEmptyColumns(Parser):
+    '''
+    Parser for a format, its a GPS CSV like format
+    with the following fields
+    '''
+    DATATYPE = "gps_unknown"
+    SEPARATOR = '\t'
+    FIELDS = FIELDS
+    SKIP_INITIAL_SPACE = True
+    
+    MAPPINGS = MAPPINGS
     
     def __init__(self, parsable: Parsable):
         super().__init__(parsable)
