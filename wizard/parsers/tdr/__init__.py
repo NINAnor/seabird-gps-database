@@ -3,6 +3,17 @@ import csv
 import io
 from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_chunk_match, stream_starts_with
+import pyarrow.csv as pacsv
+
+ENDLINES = [
+    'No Fast Log Data',
+    'No Fast Data'
+]
+
+def skip(row):
+    if not row.text or row.text in ENDLINES:
+        return 'skip'
+    return 'error'
 
 
 class TDRParser(Parser):
@@ -11,10 +22,14 @@ class TDRParser(Parser):
     SEPARATOR = ","
     ALLOWED_META = ['Resolution']
     HEAD = '\n?Comment\s:-'
+    MAX_READ = 1000
 
     def __init__(self, parsable: Parsable):
         super().__init__(parsable)
         meta = {}
+        row_count = 0
+
+        expected_row = self.SEPARATOR.join(self.FIELDS)
 
         with self.file.get_stream(binary=False) as stream:
             if not stream.seekable():
@@ -22,37 +37,27 @@ class TDRParser(Parser):
 
             if not stream_chunk_match(stream, 200, self.HEAD):
                 self._raise_not_supported('Stream head different than expected')
-        
-            intro, data, _end = stream.read().split("\n\n\n\n")
 
-        # TODO: some metadata could be present also in the intro
+            for row in stream.readlines():
+                if row.strip() == expected_row:
+                    break
 
-        # Split line by line iteratively until the expected header is found
-        while data.split('\n', 1)[0] != ','.join(self.FIELDS):
-            row, data = data.split('\n', 1)
-            # In the meantime we expect rows like "Key = Value"
-            if '=' in row:
-                key, value = row.split('=')
-                if key in self.ALLOWED_META:
-                    meta[key.strip()] = value.strip()
-            else:
-                try:
-                    # Only the csv data start with a number (it's a date)
-                    # so if the first value is a number, then header is not what we expect
-                    # ---> fail fast without reading the whole file
-                    if int(row[0]):
-                        self._raise_not_supported('Header not recognized')
-                except ValueError:
-                    # this is expected
-                    pass
-
-        content = io.StringIO(data)
-        reader = csv.reader(content, delimiter=self.SEPARATOR)
-        header = next(reader)
-        if header != self.FIELDS:
-            self._raise_not_supported(f"Stream have different of fields than expected, {header} != {self.FIELDS}")
-
-        self.data = pd.read_csv(content, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+                row_count += 1
+                if '=' in row:
+                    key, value = row.split('=')
+                    if key in self.ALLOWED_META:
+                        meta[key.strip()] = value.strip()
+                
+                if row_count > self.MAX_READ:
+                    self._raise_not_supported(f'Stream data not found after {self.MAX_READ} lines')
+    
+        parse_options = pacsv.ParseOptions(delimiter=self.SEPARATOR, invalid_row_handler=skip)
+        read_options = pacsv.ReadOptions(skip_rows=row_count + 1)
+        convert_options = pacsv.ConvertOptions(
+            include_columns=self.FIELDS + ['empty'],
+            include_missing_columns=True,
+        )
+        self.data = pacsv.read_csv(self.file._file_path, parse_options=parse_options, read_options=read_options, convert_options=convert_options).to_pandas()
 
         for key, value in meta:
             self.data[key] = [value] * len(self.data)
