@@ -3,10 +3,10 @@ import csv
 
 import pandas as pd
 
-from parsers.parser_base import CSVParser
+from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_chunk_contains
 
-class GPS2JMParser(CSVParser):
+class GPS2JMParser(Parser):
     '''
     Parser for 2Jm format
     '''
@@ -43,31 +43,31 @@ class GPS2JMParser(CSVParser):
     #     "trip_nr": None,
     # }
     
-    def __init__(self, stream):
-        self.stream = stream
-        self.data = []
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
         
-        if not stream_chunk_contains(self.stream, 30, "2JmGPS-LOG"):
-            self._raise_not_supported(f"Stream must start with 2JmGPS-LOG")
+            if not stream_chunk_contains(stream, 30, "2JmGPS-LOG"):
+                self._raise_not_supported(f"Stream must start with 2JmGPS-LOG")
         
-        groups = self.stream.read().split('\n\n')[1:]
-        data = None
-        for group in groups:
-            if group in self.ENDINGS:
-                break
-            data = group
+            groups = stream.read().split('\n\n')[1:]
+            data = None
+            for group in groups:
+                if group in self.ENDINGS:
+                    break
+                data = group
 
-        content = io.StringIO(data)
+            content = io.StringIO(data)
 
-        reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
-        header = next(reader)
-        if len(header) != len(self.FIELDS):
-            self._raise_not_supported(f"Stream have fields different than expected, {len(header)} != {len(self.FIELDS)}")
+            reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=True)
+            header = next(reader)
+            if len(header) != len(self.FIELDS):
+                self._raise_not_supported(f"Stream have fields different than expected, {len(header)} != {len(self.FIELDS)}")
 
-        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 PARSERS = [
     GPS2JMParser,

@@ -1,7 +1,7 @@
 import pandas as pd
 import csv
 import io
-from parsers.parser_base import Parser
+from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_chunk_match, stream_starts_with
 
 
@@ -12,28 +12,24 @@ class TDRParser(Parser):
     ALLOWED_META = ['Resolution']
     HEAD = '\n?Comment\s:-'
 
-    def __init__(self, stream):
-        super().__init__(stream)
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
         meta = {}
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
 
-        self.stream.seek(0)
-
-        if not stream_chunk_match(self.stream, 200, self.HEAD):
-            self._raise_not_supported('Stream head different than expected')
+            if not stream_chunk_match(stream, 200, self.HEAD):
+                self._raise_not_supported('Stream head different than expected')
         
-        intro, data, _end = self.stream.read().split("\n\n\n\n")
-        print(intro)
+            intro, data, _end = stream.read().split("\n\n\n\n")
 
         # TODO: some metadata could be present also in the intro
 
         # Split line by line iteratively until the expected header is found
-        print(data.split('\n', 1)[0], ','.join(self.FIELDS))
         while data.split('\n', 1)[0] != ','.join(self.FIELDS):
             row, data = data.split('\n', 1)
-            print(row)
             # In the meantime we expect rows like "Key = Value"
             if '=' in row:
                 key, value = row.split('=')
@@ -95,18 +91,18 @@ class PathtrackPressParser(Parser):
         self.data['date'] = self.data['day'].astype(str) + '/' + self.data['month'].astype(str) + ":" + self.data['year'].astype(str)
         return super().normalize_data()
 
-    def __init__(self, stream):
-        super().__init__(stream)
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
 
-        self.stream.seek(0)
-
-        if not stream_starts_with(self.stream, self.HEAD):
-            self._raise_not_supported('Stream head different than expected')
+            if not stream_starts_with(stream, self.HEAD):
+                self._raise_not_supported('Stream head different than expected')
         
-        _soi, _metadata, data = self.stream.read().split(self.DIVIDER, 2)
+            _soi, _metadata, data = stream.read().split(self.DIVIDER, 2)
+
         content = io.StringIO(data)
         reader = csv.reader(content, delimiter=self.SEPARATOR)
         header = next(reader)

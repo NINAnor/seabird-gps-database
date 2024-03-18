@@ -1,7 +1,7 @@
 import pandas as pd
 import csv
 
-from parsers.parser_base import CSVParser
+from parsers.parser_base import CSVParser, Parsable
 
 
 class GPSUnknownFormatParser(CSVParser):
@@ -43,24 +43,24 @@ class GPSUnknownFormatParserWithEmptyColumns(GPSUnknownFormatParser):
     with the following fields
     '''
     
-    def __init__(self, stream):
-        self.stream = stream
-        self.data = []
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
+            
+            reader = csv.reader(stream, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
+            header = next(reader)
 
-        reader = csv.reader(self.stream, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
-        header = next(reader)
+            # Filter empty columns
+            header = [c for c in header if c != ""]
 
-        # Filter empty columns
-        header = [c for c in header if c != ""]
+            if header != self.FIELDS:
+                self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
 
-        if header != self.FIELDS:
-            self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
-
-        self.stream.seek(0)
-        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            stream.seek(0)
+            self.data = pd.read_csv(stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 PARSERS = [

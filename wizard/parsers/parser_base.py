@@ -1,16 +1,48 @@
 import csv
 import pathlib
 import os
+import logging
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import pyarrow.csv as pacsw
-import logging
+import pyarrow.csv as pacsv
+from chardet.universaldetector import UniversalDetector
+from contextlib import contextmanager
 
 MAX_SPEED = float(os.environ.get('MAX_SPEED', default="10"))
 
 class ParserNotSupported(Exception):
     pass
+
+
+class Parsable:
+    def __init__(self, file_path: pathlib.Path) -> None:
+        self._file_path = file_path
+
+        if not self._file_path.exists():
+            raise ValueError('File does not exists')
+        
+        self.encoding = self._detect_encoding()
+        
+    @contextmanager
+    def get_stream(self, binary=False):
+        params = {
+            'mode': 'rb' if binary else 'r',
+            'encoding': None if binary else self.encoding
+        }
+        stream = open(self._file_path, **params)
+        yield stream
+        stream.close()
+
+    def _detect_encoding(self):
+        detector = UniversalDetector()
+        with self.get_stream(binary=True) as stream:
+            for line in stream.readlines():
+                detector.feed(line)
+                if detector.done: break
+            detector.close()
+            logging.debug(detector.result)
+            return detector.result['encoding']
 
 
 class Parser:
@@ -19,15 +51,15 @@ class Parser:
         "speed_km_h": lambda x: x > MAX_SPEED
     }
 
-    def __init__(self, stream):
-        self.stream = stream
+    def __init__(self, parsable: Parsable):
+        self.file = parsable
         self.data = []
 
     def _raise_not_supported(self, text):
         raise ParserNotSupported(f'{self.__class__.__name__}: {text}')
     
     def get_mappings(self):
-        return getattr(self, 'MAPPINGS', {}) 
+        return {v: k for k, v in getattr(self, 'MAPPINGS', {}).items() if v}
     
     def get_outliers(self):
         return getattr(self, 'OUTLIERS', {})
@@ -38,14 +70,8 @@ class Parser:
         '''
         mappings = self.get_mappings()
         if mappings:
-            data = self.data
-            df = pd.DataFrame(columns=mappings.keys(), index=range(1, data.size))
+            self.data = self.data.rename(mappings)
 
-            for k,v in mappings.items():
-                if v:
-                    df[k] = data[v]
-
-            self.data = df
 
     def detect_outliers(self):
         '''
@@ -60,7 +86,7 @@ class Parser:
 
     def as_table(self) -> pa.Table:
         self.normalize_data()
-        self.detect_outliers()
+        # self.detect_outliers()
         table = pa.Table.from_pandas(self.data, preserve_index=False)
         table = table.append_column('datatype', pa.array([self.DATATYPE] * len(table), pa.string()))
         table = table.append_column('parser', pa.array([self.__class__.__name__] * len(table), pa.string()))
@@ -77,7 +103,7 @@ class Parser:
         pq.write_table(self.as_table(), str(path / f'{filename.stem}.parquet'))
 
     def write_csv(self, path):
-        pacsw.write_csv(self.as_table(), str(path))
+        pacsv.write_csv(self.as_table(), str(path))
 
 
 class CSVParser(Parser):
@@ -86,22 +112,21 @@ class CSVParser(Parser):
     SEPARATOR = ','
     SKIP_INITIAL_SPACE = True
 
-    def __init__(self, stream):
-        super().__init__(stream)
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
 
-        if 'b' in self.stream.mode:
-            self._raise_not_supported('Stream is binary')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+            reader = csv.reader(stream, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
+            header = next(reader)
+            if header != self.FIELDS:
+                self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
 
-        reader = csv.reader(self.stream, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
-        header = next(reader)
-        if header != self.FIELDS:
-            self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
+                stream.seek(0)
 
-        self.stream.seek(0)
-        self.data = pd.read_csv(self.stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            self.data = pd.read_csv(stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 class ExcelParser(Parser):

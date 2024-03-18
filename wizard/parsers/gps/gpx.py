@@ -49,20 +49,19 @@ class GPXParser(Parser):
     def __init__(self, stream):
         super().__init__(stream)
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
 
-        self.stream.seek(0)
+            if not stream_chunk_contains(stream, 30, '<?xml'):
+                self._raise_not_supported('Stream does not start with <?xml')
+            
+            gpx = gpxpy.parse(stream)
+            points = []
+            for track in gpx.tracks:
+                for segment in track.segments:
+                    for point in segment.points:
+                        points.append((getattr(point, f) for f in self.FIELDS))
 
-        if not stream_chunk_contains(self.stream, 30, '<?xml'):
-            self._raise_not_supported('Stream does not start with <?xml')
-        
-        gpx = gpxpy.parse(self.stream)
-        points = []
-        for track in gpx.tracks:
-            for segment in track.segments:
-                for point in segment.points:
-                    points.append((getattr(point, f) for f in self.FIELDS))
-
-        self.data = pd.DataFrame(points, columns=self.FIELDS)
+            self.data = pd.DataFrame(points, columns=self.FIELDS)
 

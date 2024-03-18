@@ -3,7 +3,7 @@ import csv
 import io
 import re
 import datetime
-from parsers.parser_base import Parser
+from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_starts_with
 
 
@@ -18,18 +18,17 @@ class AcceleratorParser(Parser):
     FREQUENCY_REGEX = '\s*(\d*)\smsec\/point'
     DELTA_ATTR = 'milliseconds'
 
-    def __init__(self, stream):
-        super().__init__(stream)
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
 
-        self.stream.seek(0)
-
-        if not stream_starts_with(self.stream, self.HEAD):
-            self._raise_not_supported('Stream head different than expected')
-        
-        intro, data = self.stream.read().split("\n\n\n")
+            if not stream_starts_with(stream, self.HEAD):
+                self._raise_not_supported('Stream head different than expected')
+            
+            intro, data = stream.read().split("\n\n\n")
 
         content = io.StringIO(data)
         reader = csv.reader(content, delimiter=self.SEPARATOR)

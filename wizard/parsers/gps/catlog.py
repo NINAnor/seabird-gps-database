@@ -3,7 +3,7 @@ import csv
 
 import pandas as pd
 
-from parsers.parser_base import CSVParser
+from parsers.parser_base import CSVParser, Parsable
 from parsers.helpers import stream_starts_with, stream_chunk_contains
 
 
@@ -39,31 +39,32 @@ class GPSCatTrackParser(CSVParser):
         "trip_nr": None,
     }
 
-    def __init__(self, stream):
-        self.stream = stream
+    def __init__(self, parsable: Parsable):
+        self.file = parsable
         self.data = []
-
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
         
-        if self.START_WITH and not stream_starts_with(self.stream, self.START_WITH):
-            self._raise_not_supported(f"Stream must start with Name:CatLog")
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
+            
+            if self.START_WITH and not stream_starts_with(stream, self.START_WITH):
+                self._raise_not_supported(f"Stream must start with Name:CatLog")
 
-        if self.DIVIDER:
-            if stream_chunk_contains(self.stream, 500, self.DIVIDER):
-                _intro, data = self.stream.read().split(self.DIVIDER)
-                content = io.StringIO(data)
+            if self.DIVIDER:
+                if stream_chunk_contains(stream, 500, self.DIVIDER):
+                    _intro, data = stream.read().split(self.DIVIDER)
+                    content = io.StringIO(data)
+                else:
+                    self._raise_not_supported(f"Stream doesn't have the divider {self.DIVIDER}")
             else:
-                self._raise_not_supported(f"Stream doesn't have the divider {self.DIVIDER}")
-        else:
-            content = self.stream
+                content = stream
 
-        reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
-        header = next(reader)
-        if header != self.FIELDS:
-            self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
+            reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
+            header = next(reader)
+            if header != self.FIELDS:
+                self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
 
-        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 class GPSCatTrack2(GPSCatTrackParser):
@@ -123,34 +124,37 @@ class GPSCatTrack3(GPSCatTrackParser):
         "trip_nr": None,
     }
 
-    def __init__(self, stream):
-        self.stream = stream
+
+    def __init__(self, parsable: Parsable):
+        self.file = parsable
         self.data = []
-
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
         
-        if self.START_WITH and not stream_starts_with(self.stream, self.START_WITH):
-            self._raise_not_supported(f"Stream must start with Name:CatLog")
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
+            
+            if self.START_WITH and not stream_starts_with(stream, self.START_WITH):
+                self._raise_not_supported(f"Stream must start with Name:CatLog")
 
-        if self.DIVIDER:
-            if stream_chunk_contains(self.stream, 500, self.DIVIDER):
-                _intro, data = self.stream.read().split(self.DIVIDER)
-                content = io.StringIO(data)
+            if self.DIVIDER:
+                if stream_chunk_contains(stream, 500, self.DIVIDER):
+                    _intro, data = stream.read().split(self.DIVIDER)
+                    content = io.StringIO(data)
+                else:
+                    self._raise_not_supported(f"Stream doesn't have the divider {self.DIVIDER}")
             else:
-                self._raise_not_supported(f"Stream doesn't have the divider {self.DIVIDER}")
-        else:
-            content = self.stream
+                content = stream
 
-        reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
-        header = next(reader)
-        if header != self.FIELDS:
-            self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
+            reader = csv.reader(content, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
+            header = next(reader)
+            if header != self.FIELDS:
+                self._raise_not_supported(f"Stream have fields different than expected, {header} != {self.FIELDS}")
 
-        # Ensure that the headers are present, then ignore them
-        names = self.FIELDS[:-2]
+            # Ensure that the headers are present, then ignore them
+            names = self.FIELDS[:-2]
 
-        self.data = pd.read_csv(content, header=0, names=names, sep=self.SEPARATOR, index_col=False)
+            self.data = pd.read_csv(content, header=0, names=names, sep=self.SEPARATOR, index_col=False)
+
 
 PARSERS = [
     GPSCatTrackParser,

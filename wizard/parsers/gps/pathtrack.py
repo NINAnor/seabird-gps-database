@@ -2,7 +2,7 @@ import csv
 import io
 import pandas as pd
 from parsers.helpers import stream_starts_with
-from parsers.parser_base import Parser, CSVParser
+from parsers.parser_base import Parser, CSVParser, Parsable
 
 
 class PathtrackParser(Parser):
@@ -55,25 +55,24 @@ class PathtrackParser(Parser):
         self.data['date'] = self.data['day'].astype(str) + '/' + self.data['month'].astype(str) + ":" + self.data['year'].astype(str)
         return super().normalize_data()
 
-    def __init__(self, stream):
-        super().__init__(stream)
+    def __init__(self, parsable: Parsable):
+        super().__init__(parsable)
 
-        if not self.stream.seekable():
-            self._raise_not_supported('Stream not seekable')
+        with self.file.get_stream(binary=False) as stream:
+            if not stream.seekable():
+                self._raise_not_supported('Stream not seekable')
 
-        self.stream.seek(0)
+            if not stream_starts_with(stream, self.HEAD):
+                self._raise_not_supported('Stream head different than expected')
+            
+            _soi, _metadata, data = stream.read().split(self.DIVIDER, 2)
+            content = io.StringIO(data)
+            reader = csv.reader(content, delimiter=self.SEPARATOR)
+            header = next(reader)
+            if len(header) != len(self.FIELDS):
+                self._raise_not_supported(f"Stream have a number of fields different than expected, {len(header)} != {len(self.FIELDS)}")
 
-        if not stream_starts_with(self.stream, self.HEAD):
-            self._raise_not_supported('Stream head different than expected')
-        
-        _soi, _metadata, data = self.stream.read().split(self.DIVIDER, 2)
-        content = io.StringIO(data)
-        reader = csv.reader(content, delimiter=self.SEPARATOR)
-        header = next(reader)
-        if len(header) != len(self.FIELDS):
-            self._raise_not_supported(f"Stream have a number of fields different than expected, {len(header)} != {len(self.FIELDS)}")
-
-        self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 class PathtrackParserNoUnknown(PathtrackParser):
