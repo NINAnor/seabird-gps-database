@@ -1,18 +1,14 @@
 import traceback
 import logging
-from chardet.universaldetector import UniversalDetector
 
-from .parser_base import Parser, ParserNotSupported, Parsable
+from .parser_base import ParserNotSupported, Parsable
 from .gps import PARSERS as GPS_PARSERS
 from .accelerometer import PARSERS as ACCELEROMETER_PARSERS
 from .tdr import PARSERS as TDR_PARSERS
-# from .parser_excel import GPSUnknownFormatExcelParser
+from .other_sensor import PARSERS as OTHER_SENSOR_PARSERS
 
-available_parsers = GPS_PARSERS + ACCELEROMETER_PARSERS + TDR_PARSERS
+available_parsers = GPS_PARSERS + ACCELEROMETER_PARSERS + TDR_PARSERS + OTHER_SENSOR_PARSERS
 
-binary_parsers = [
-    # GPSUnknownFormatExcelParser,
-]
 
 def detect_file(path):
     parsable = Parsable(file_path=path)
