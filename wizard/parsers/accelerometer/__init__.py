@@ -5,7 +5,11 @@ import re
 import datetime
 from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_starts_with
+import pyarrow.csv as pacsv
 
+
+def skip(row):
+    return 'error'
 
 class AcceleratorParser(Parser):
     DATATYPE = "accelerometer"
@@ -17,9 +21,13 @@ class AcceleratorParser(Parser):
     STRP_FORMAT = '%Y/%m/%d %H:%M:%S'
     FREQUENCY_REGEX = '\s*(\d*)\smsec\/point'
     DELTA_ATTR = 'milliseconds'
+    MAX_READ = 30
 
     def __init__(self, parsable: Parsable):
         super().__init__(parsable)
+
+        row_count = 0
+        intro = ""
 
         with self.file.get_stream(binary=False) as stream:
             if not stream.seekable():
@@ -27,16 +35,27 @@ class AcceleratorParser(Parser):
 
             if not stream_starts_with(stream, self.HEAD):
                 self._raise_not_supported('Stream head different than expected')
+
+            stream.seek(0)
             
-            intro, data = stream.read().split("\n\n\n")
+            for row in stream.readlines():
+                if [v.strip() for v in row.split(',')] == self.FIELDS:
+                    break
+                row_count += 1
+                intro += row
 
-        content = io.StringIO(data)
-        reader = csv.reader(content, delimiter=self.SEPARATOR)
-        header = next(reader)
-        if [h.strip().upper() for h in header] != self.FIELDS:
-            self._raise_not_supported(f"Stream have different of fields than expected, {header} != {self.FIELDS}")
+                if row_count > self.MAX_READ:
+                    self._raise_not_supported(f'Expected data not found after {self.MAX_READ} lines')
+    
 
-        self.data = pd.read_csv(content, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+        parse_options = pacsv.ParseOptions(delimiter=self.SEPARATOR, invalid_row_handler=skip)
+        read_options = pacsv.ReadOptions(skip_rows=row_count + 1)
+        convert_options = pacsv.ConvertOptions(
+            include_columns=self.FIELDS + ['empty'],
+            include_missing_columns=True,
+        )
+        self.data = pacsv.read_csv(self.file._file_path, parse_options=parse_options, read_options=read_options, convert_options=convert_options).to_pandas()
+
         frequency = self.get_frequency(intro)
         start = self.get_start_datetime(intro)
         self.data['datetime'] = [start + (frequency * index) for index in range(len(self.data))]
