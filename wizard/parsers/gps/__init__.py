@@ -9,7 +9,9 @@ from .ho11 import PARSERS as HO11
 from .axytrek import PARSERS as AXYTREK
 from .interrex import PARSERS as INTERREX
 from .ornitela import PARSERS as ORNITELA
+from .mataki import PARSERS as MATAKI
 
 PARSERS = [
     GPXParser,
-] + IGOUT + CATLOG + BASE + JM + UNKNOWN + PATHTRACK + HO11 + AXYTREK + INTERREX + ORNITELA
+] + IGOUT + CATLOG + BASE + JM + UNKNOWN + PATHTRACK + \
+    HO11 + AXYTREK + INTERREX + ORNITELA + MATAKI
