@@ -178,11 +178,11 @@ CREATE TABLE public.import (
     gps_data_collected text,
     gps_raw_datafile_name text,
     gps_record_frequency_sec text,
-    mass_gps_logger_g text,
+    gps_logger_mass_g text,
     gps_attachment_method text,
     gps_mount_method text,
     total_logger_mass_all_loggers_g text,
-    gps_logger_comment text,
+    gps_comment text,
     age text,
     sex text,
     sexing_method text,
@@ -222,18 +222,18 @@ CREATE TABLE public.import (
     blood_sample text,
     feather_sample text,
     other_samples text,
-    comments_samples text,
+    samples_comment text,
     logging_for_seatrack text,
     gls_logger_model text,
     gls_logger_id text,
     gls_status text,
     gls_data_collected text,
-    gls_record_frequency_min text,
+    gls_record_frequency_sec text,
     gls_logger_mass_g text,
     gls_attachment_method text,
     gls_mount_method text,
-    gls_startup_date_gmt text,
-    gls_startup_time_gmt text,
+    gls_startup_date text,
+    gls_startup_time text,
     gls_deployment_date text,
     gls_deployment_time text,
     gls_retrieval_date text,
@@ -241,13 +241,13 @@ CREATE TABLE public.import (
     gls_deployment_retrieval_time_zone text,
     gls_time_zone text,
     gls_raw_datafile_name text,
-    gls_comments text,
+    gls_comment text,
     tdr_logger_model text,
     tdr_logger_id text,
     tdr_status text,
     tdr_data_collected text,
     tdr_record_frequency_sec text,
-    tdr_mass_g text,
+    tdr_logger_mass_g text,
     tdr_attachment_method text,
     tdr_mount_method text,
     tdr_startup_date text,
@@ -256,7 +256,7 @@ CREATE TABLE public.import (
     tdr_deployment_time text,
     tdr_retrieval_date text,
     tdr_retrieval_time text,
-    tdr_startup_deployment_retrieval_time_zone text,
+    tdr_deployment_retrieval_time_zone text,
     tdr_time_zone text,
     tdr_raw_datafile_name text,
     tdr_comment text,
@@ -264,7 +264,7 @@ CREATE TABLE public.import (
     other_sensor_logger_id text,
     other_sensor_status text,
     other_sensor_data_collected text,
-    other_sensor_record_frequency_millisec text,
+    other_sensor_record_frequency_sec text,
     other_sensor_logger_mass_g text,
     other_sensor_attachment_method text,
     other_sensor_mount_method text,
@@ -274,7 +274,7 @@ CREATE TABLE public.import (
     other_sensor_deployment_time text,
     other_sensor_retrieval_date text,
     other_sensor_retrieval_time text,
-    other_sensor_startup_deployment_retrieval_time_zone text,
+    other_sensor_deployment_retrieval_time_zone text,
     other_sensor_time_zone text,
     other_sensor_raw_datafile_name text,
     other_sensor_comment text,
@@ -294,28 +294,32 @@ CREATE FUNCTION public.import_animal_and_ring(new public.import) RETURNS void
     LANGUAGE plpgsql
     AS $$
 declare
-    animal text;
+    animal_id text;
 begin
     if new.old_ring_number is null then
-        animal = new.ring_number;
+        animal_id = new.ring_number;
     else
-        select animal into strict animal
-          from ring
-         where id = new.old_ring_number;
+        select animal into strict animal_id
+        from ring
+        where id = new.old_ring_number;
     end if;
     insert into animal values(
-        animal,
+        animal_id,
         new.species,
         new.morph,
         new.subspecies
     ) on conflict do nothing;
     insert into ring values(
         new.ring_number,
-        animal,
+        animal_id,
         new.euring_code,
         new.colour_ring_colour,
         new.colour_ring_code
     ) on conflict do nothing;
+exception
+    when no_data_found then raise exception using
+        errcode = '22000',
+        message = 'Old ring number specified, but not present in the database';
 end;
 $$;
 
@@ -386,7 +390,7 @@ begin
         (new.blood_sample)::bool,
         (new.feather_sample)::bool,
         (new.other_samples)::bool,
-        new.comments_samples,
+        new.samples_comment,
         new.comment,
         new.other,
         new.funding_source,
@@ -440,6 +444,9 @@ $$;
 CREATE FUNCTION public.import_logger_and_logger_instrumentation(new public.import) RETURNS void
     LANGUAGE plpgsql
     AS $$
+declare
+    tdr_file text;
+    tdr_list text[];
 begin
     if new.gps_deployment_date is not null then
         insert into logger values(
@@ -453,7 +460,7 @@ begin
             new.ring_number,
             new.gps_status,
             (new.gps_record_frequency_sec)::decimal,
-            (new.mass_gps_logger_g)::decimal,
+            (new.gps_logger_mass_g)::decimal,
             new.gps_attachment_method,
             new.gps_mount_method,
             (new.gps_startup_date::date +
@@ -469,7 +476,7 @@ begin
             end,
             new.gps_raw_datafile_name,
             null,
-            new.gps_logger_comment
+            new.gps_comment
         );
     end if;
     if new.gls_deployment_date is not null then
@@ -483,12 +490,12 @@ begin
             new.gls_logger_id,
             new.ring_number,
             new.gls_status,
-            (new.gls_record_frequency_min)::decimal*60,
+            (new.gls_record_frequency_sec)::decimal,
             (new.gls_logger_mass_g)::decimal,
             new.gls_attachment_method,
             new.gls_mount_method,
-            (new.gls_startup_date_gmt::date +
-             new.gls_startup_time_gmt::time) at time zone
+            (new.gls_startup_date::date +
+             new.gls_startup_time::time) at time zone
              'UTC',
             (new.gls_deployment_date::date +
              new.gls_deployment_time::time) at time zone
@@ -500,7 +507,7 @@ begin
             end,
             new.gls_raw_datafile_name,
             case when safe_cast_bool(new.logging_for_seatrack) then 'seatrack' else null end,
-            new.gls_comments
+            new.gls_comment
         );
     end if;
     if new.tdr_deployment_date is not null then
@@ -509,30 +516,37 @@ begin
             'tdr',
             new.tdr_logger_model
         ) on conflict do nothing;
-        insert into logger_instrumentation values(
-            default,
-            new.tdr_logger_id,
-            new.ring_number,
-            new.tdr_status,
-            (new.tdr_record_frequency_sec)::decimal,
-            (new.tdr_mass_g)::decimal,
-            new.tdr_attachment_method,
-            new.tdr_mount_method,
-            (new.tdr_startup_date::date +
-             new.tdr_startup_time::time) at time zone
-             new.tdr_startup_deployment_retrieval_time_zone,
-            (new.tdr_deployment_date::date +
-             new.tdr_deployment_time::time) at time zone
-             new.tdr_startup_deployment_retrieval_time_zone,
-            case when new.tdr_retrieval_date is null then null else
-                (new.tdr_retrieval_date::date +
-                 new.tdr_retrieval_time::time) at time zone
-                 new.tdr_startup_deployment_retrieval_time_zone
-            end,
-            new.tdr_raw_datafile_name,
-            null,
-            new.tdr_comment
-        );
+        if new.tdr_raw_datafile_name is not null then
+            tdr_list = string_to_array(new.tdr_raw_datafile_name, ';');
+        else
+            tdr_list = array[null];
+        end if;
+        foreach tdr_file in array tdr_list loop
+            insert into logger_instrumentation values(
+                default,
+                new.tdr_logger_id,
+                new.ring_number,
+                new.tdr_status,
+                (new.tdr_record_frequency_sec)::decimal,
+                (new.tdr_logger_mass_g)::decimal,
+                new.tdr_attachment_method,
+                new.tdr_mount_method,
+                (new.tdr_startup_date::date +
+                new.tdr_startup_time::time) at time zone
+                new.tdr_deployment_retrieval_time_zone,
+                (new.tdr_deployment_date::date +
+                new.tdr_deployment_time::time) at time zone
+                new.tdr_deployment_retrieval_time_zone,
+                case when new.tdr_retrieval_date is null then null else
+                    (new.tdr_retrieval_date::date +
+                    new.tdr_retrieval_time::time) at time zone
+                    new.tdr_deployment_retrieval_time_zone
+                end,
+                tdr_file,
+                null,
+                new.tdr_comment
+            );
+        end loop;
     end if;
     if new.other_sensor_deployment_date is not null then
         insert into logger values(
@@ -545,111 +559,26 @@ begin
             new.other_sensor_logger_id,
             new.ring_number,
             new.other_sensor_status,
-            (new.other_sensor_record_frequency_millisec)::decimal/1000,
+            (new.other_sensor_record_frequency_sec)::decimal,
             (new.other_sensor_logger_mass_g)::decimal,
             new.other_sensor_attachment_method,
             new.other_sensor_mount_method,
             (new.other_sensor_startup_date::date +
              new.other_sensor_startup_time::time) at time zone
-             new.other_sensor_startup_deployment_retrieval_time_zone,
+             new.other_sensor_deployment_retrieval_time_zone,
             (new.other_sensor_deployment_time::date +
              new.other_sensor_deployment_time::time) at time zone
-             new.other_sensor_startup_deployment_retrieval_time_zone,
+             new.other_sensor_deployment_retrieval_time_zone,
             case when new.other_sensor_retrieval_date is null then null else
                 (new.other_sensor_retrieval_date::date +
                  new.other_sensor_retrieval_time::time) at time zone
-                 new.other_sensor_startup_deployment_retrieval_time_zone
+                 new.other_sensor_deployment_retrieval_time_zone
             end,
             new.other_sensor_raw_datafile_name,
             null,
             new.other_sensor_comment
         );
     end if;
-end;
-$$;
-
-
---
--- Name: import_logger_data_gps(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.import_logger_data_gps() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-begin
-    insert into logger_data values(
-        new.filename,
-        null,
-        (new."UTC_datetime" || ' UTC')::timestamp,
-        case when new.hdop = '0.0'
-             then null
-             else ST_SetSRID(ST_MakePoint(
-                      new."Latitude"::float,
-                      new."Longitude"::float,
-                      new."Altitude_m"::float
-                  ), 4326)
-        end,
-        new.satcount::integer,
-        case when new.hdop = '0.0'
-             then null
-             else new.hdop::decimal
-        end
-    ) on conflict do nothing;
-    return null;
-exception
-    when others then
-        raise exception using
-            errcode = sqlstate,
-            message = sqlerrm,
-            detail = row_to_json(new);
-end;
-$$;
-
-
---
--- Name: import_logger_data_gps_pathtrack(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.import_logger_data_gps_pathtrack() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-begin
-    insert into logger_data values(
-        new.filename,
-        null,
-        make_timestamptz(
-            (new.year)::int,
-            (new.month)::int,
-            (new.day)::int,
-            (new.hour)::int,
-            (new.minute)::int,
-            (new.second)::float,
-            'UTC'
-        ),
-        case when new.accuracy = '9999.999'
-             then null
-             else ST_SetSRID(ST_MakePoint(
-                      new.lat::float,
-                      new.lon::float,
-                      case when new.altitude = '9999.999'
-                           then null
-                           else (new.altitude)::float
-                      end
-                  ), 4326)
-        end,
-        new.satellites::integer,
-        case when new.accuracy = '9999.999'
-             then null
-             else new.accuracy::decimal
-        end
-    ) on conflict do nothing;
-    return null;
-exception
-    when others then
-        raise exception using
-            errcode = sqlstate,
-            message = sqlerrm,
-            detail = row_to_json(new);
 end;
 $$;
 
@@ -787,7 +716,10 @@ CREATE TABLE public.deployment (
     other text,
     funding_source text,
     data_responsible text,
-    eggs_deployment_extra boolean
+    eggs_deployment_extra boolean,
+    chicks_deployment_extra boolean,
+    eggs_retrieval_extra boolean,
+    chicks_retrieval_extra boolean
 );
 
 
@@ -818,63 +750,6 @@ CREATE MATERIALIZED VIEW public.import_fields AS
 
 
 --
--- Name: import_logger_data_gps; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.import_logger_data_gps (
-    filename text,
-    device_id text,
-    "UTC_datetime" text,
-    "UTC_date" text,
-    "UTC_time" text,
-    datatype text,
-    satcount text,
-    "U_bat_mV" text,
-    bat_soc_pct text,
-    "solar_I_mA" text,
-    hdop text,
-    "Latitude" text,
-    "Longitude" text,
-    "Altitude_m" text,
-    speed_km_h text,
-    direction_deg text,
-    "temperature_C" text,
-    mag_x text,
-    mag_y text,
-    mag_z text,
-    acc_x text,
-    acc_y text,
-    acc_z text,
-    depth_m text
-);
-
-
---
--- Name: import_logger_data_gps_pathtrack; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.import_logger_data_gps_pathtrack (
-    filename text,
-    day text,
-    month text,
-    year text,
-    hour text,
-    minute text,
-    second text,
-    second_of_day text,
-    satellites text,
-    lat text,
-    lon text,
-    altitude text,
-    clock_offset text,
-    accuracy text,
-    battery text,
-    unknown1 text,
-    unknown2 text
-);
-
-
---
 -- Name: logger; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -882,20 +757,6 @@ CREATE TABLE public.logger (
     id text NOT NULL,
     type text NOT NULL,
     model text
-);
-
-
---
--- Name: logger_data; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.logger_data (
-    filename text,
-    invalid boolean,
-    datetime timestamp with time zone NOT NULL,
-    geometry public.geometry(PointZ),
-    satellites integer,
-    hdop numeric
 );
 
 
@@ -1045,20 +906,6 @@ CREATE TRIGGER import BEFORE INSERT ON public.import FOR EACH ROW EXECUTE FUNCTI
 
 
 --
--- Name: import_logger_data_gps import_logger_data_gps; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER import_logger_data_gps BEFORE INSERT ON public.import_logger_data_gps FOR EACH ROW EXECUTE FUNCTION public.import_logger_data_gps();
-
-
---
--- Name: import_logger_data_gps_pathtrack import_logger_data_gps_pathtrack; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER import_logger_data_gps_pathtrack BEFORE INSERT ON public.import_logger_data_gps_pathtrack FOR EACH ROW EXECUTE FUNCTION public.import_logger_data_gps_pathtrack();
-
-
---
 -- Name: chick chick_deployment_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1080,14 +927,6 @@ ALTER TABLE ONLY public.deployment
 
 ALTER TABLE ONLY public.deployment
     ADD CONSTRAINT deployment_ring_fkey FOREIGN KEY (ring) REFERENCES public.ring(id);
-
-
---
--- Name: logger_data logger_data_filename_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.logger_data
-    ADD CONSTRAINT logger_data_filename_fkey FOREIGN KEY (filename) REFERENCES public.logger_instrumentation(filename);
 
 
 --
@@ -1135,10 +974,12 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20231020141034'),
     ('20231102100501'),
     ('20231122005008'),
-    ('20231122005845'),
-    ('20231122021711'),
     ('20240116110423'),
     ('20240117072241'),
     ('20240117081051'),
     ('20240117093556'),
-    ('20240117105114');
+    ('20240117105114'),
+    ('20240223120820'),
+    ('20240314143212'),
+    ('20240314145815'),
+    ('20240314145816');
