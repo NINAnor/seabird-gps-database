@@ -738,15 +738,67 @@ ALTER TABLE public.deployment ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 
 
 --
--- Name: import_fields; Type: MATERIALIZED VIEW; Schema: public; Owner: -
+-- Name: ring; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE MATERIALIZED VIEW public.import_fields AS
- SELECT column_name,
-    is_nullable
-   FROM information_schema.columns
-  WHERE (((table_schema)::name = 'public'::name) AND ((table_name)::name = 'import'::name))
-  WITH NO DATA;
+CREATE TABLE public.ring (
+    id text NOT NULL,
+    animal text NOT NULL,
+    euring_code text,
+    colour_ring_colour text,
+    colour_ring_code text
+);
+
+
+--
+-- Name: flat_deployments; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.flat_deployments AS
+ SELECT d.id AS deployment_id,
+    d.age,
+    d.sample_blood,
+    d.breeding_stage_deployment,
+    d.breeding_stage_retrieval,
+    d.chicks_deployment,
+    d.chicks_deployment_extra,
+    d.chicks_retrieval,
+    d.chicks_retrieval_extra,
+    c.name AS colony,
+    c.geometry AS colony_geometry,
+    d.comment,
+    c.country,
+    d.culmen_mm,
+    d.data_responsible,
+    d.eggs_deployment,
+    d.eggs_retrieval,
+    r.euring_code,
+    d.funding_source,
+    d.further_chick_measures_available,
+    d.gonys_mm,
+    d.mass_deployment_g,
+    d.mass_retrieval_g,
+    d.more_information_on_breeding_success_available,
+    a.morph,
+    c.nest_id,
+    c.plot,
+    r.id AS ring_number,
+    r.colour_ring_code,
+    r.colour_ring_colour,
+    d.sample_feather,
+    d.sample_notes,
+    d.scull_mm,
+    d.sex,
+    d.sexing_method,
+    a.species,
+    a.subspecies,
+    d.tarsus_mm,
+    d.total_logger_mass_all_loggers_g,
+    d.wing_mm
+   FROM (((public.deployment d
+     JOIN public.colony c ON ((d.colony = c.name)))
+     JOIN public.ring r ON ((r.id = d.ring)))
+     JOIN public.animal a ON ((r.animal = a.id)));
 
 
 --
@@ -783,6 +835,43 @@ CREATE TABLE public.logger_instrumentation (
 
 
 --
+-- Name: flat_logger_files; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.flat_logger_files AS
+ SELECT li.id,
+    li.logger,
+    li.ring,
+    li.status,
+    li.sampling_freq_s,
+    li.mass_g,
+    li.attachment_method,
+    li.mount_method,
+    li.startup,
+    li.deployment,
+    li.retrieval,
+    li.filename,
+    li.data_stored_externally,
+    li.comment,
+    l.type,
+    l.model
+   FROM (public.logger_instrumentation li
+     JOIN public.logger l ON ((li.logger = l.id)));
+
+
+--
+-- Name: import_fields; Type: MATERIALIZED VIEW; Schema: public; Owner: -
+--
+
+CREATE MATERIALIZED VIEW public.import_fields AS
+ SELECT column_name,
+    is_nullable
+   FROM information_schema.columns
+  WHERE (((table_schema)::name = 'public'::name) AND ((table_name)::name = 'import'::name))
+  WITH NO DATA;
+
+
+--
 -- Name: logger_instrumentation_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -793,19 +882,6 @@ ALTER TABLE public.logger_instrumentation ALTER COLUMN id ADD GENERATED ALWAYS A
     NO MINVALUE
     NO MAXVALUE
     CACHE 1
-);
-
-
---
--- Name: ring; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.ring (
-    id text NOT NULL,
-    animal text NOT NULL,
-    euring_code text,
-    colour_ring_colour text,
-    colour_ring_code text
 );
 
 
@@ -982,4 +1058,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240223120820'),
     ('20240314143212'),
     ('20240314145815'),
-    ('20240314145816');
+    ('20240314145816'),
+    ('20240508145816'),
+    ('20240508145817');
