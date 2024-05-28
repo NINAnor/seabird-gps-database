@@ -9,7 +9,7 @@ COPY pyproject.toml pdm.lock .
 RUN --mount=type=cache,target=/root/.cache/pdm \
     pdm install --no-self
 
-COPY wizard.py .
+COPY wizard.py parser.py .
 COPY parsers/ parsers/
 COPY templates/ templates/
 
