@@ -23,6 +23,7 @@ services:
       PGRST_JWT_SECRET: ${JWT_SECRET}
       PGRST_DB_ANON_ROLE: web_anon
   wizard:
+    image: seapop_wizard
     build:
       context: wizard
     environment:
@@ -30,6 +31,7 @@ services:
       POSTGREST_TOKEN: ${WRITER_TOKEN}
       LOGGING: DEBUG
       TEST_DATA_PATH: /test_data
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
     tty: true
     stdin_open: true
     volumes:
@@ -37,6 +39,18 @@ services:
       - ./data:/data/
       - ./wizard/parsers:/app/parsers
       - ./test_data:/test_data
+  queue:
+    image: seapop_wizard
+    command: pdm run procrastinate --app=tasks.app worker
+    environment:
+      POSTGREST_URL: http://postgrest:3000
+      POSTGREST_TOKEN: ${WRITER_TOKEN}
+      LOGGING: DEBUG
+      TEST_DATA_PATH: /test_data
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
+    volumes:
+      - ./data:/data/
+      - ./wizard/parsers:/app/parsers
   pgweb:
     image: sosedoff/pgweb:latest
     environment:

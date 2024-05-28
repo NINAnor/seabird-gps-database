@@ -95,12 +95,10 @@ class Parser:
     def write_parquet(self, path: pathlib.Path, filename: str = None):
         if filename:
             filename = pathlib.Path(filename)
-        if not filename and self.stream.name:
-            filename = pathlib.Path(self.stream.name)
         else:
-            raise Exception("Stream has no name and no filename is provided")
+            filename = self.file._file_path.name
 
-        pq.write_table(self.as_table(), str(path / f'{filename.stem}.parquet'))
+        pq.write_table(self.as_table(), str(path / f'{filename}.parquet'))
 
     def write_csv(self, path):
         pacsv.write_csv(self.as_table(), str(path))

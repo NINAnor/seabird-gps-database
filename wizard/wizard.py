@@ -22,6 +22,8 @@ from pywebio.output import clear, put_error, put_success, put_text, put_button, 
 from pywebio.session import run_js
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from tasks import to_parquet, app
+
 if os.getenv("SENTRY_DSN"):
     import sentry_sdk
     sentry_sdk.init(
@@ -123,24 +125,25 @@ tpl = '''
 '''
 
 def wizard():
-    put_widget(tpl, {'contents': [
-        put_link('Explore Database', '/pgweb/', new_window=True),
-        put_link('Rest APIs', '/postgrest/', new_window=True),
-        put_link('Uploaded Data', '/data/', new_window=True),
-    ]})
+    with app.open():
+        put_widget(tpl, {'contents': [
+            put_link('Explore Database', '/pgweb/', new_window=True),
+            put_link('Rest APIs', '/postgrest/', new_window=True),
+            put_link('Uploaded Data', '/data/', new_window=True),
+        ]})
 
-    result = actions(
-        "What you want to upload?",
-        buttons=[
-        {"value": "metadata", "type": "submit", "label": "Metadata"},
-        {"value": "loggers", "type": "submit", "label": "Loggers"},
-    ])
-    if result == "metadata":
-        handle_metadata()
-    elif result == "loggers":
-        handle_loggers()
-    else:
-        put_reload_button()
+        result = actions(
+            "What you want to upload?",
+            buttons=[
+            {"value": "metadata", "type": "submit", "label": "Metadata"},
+            {"value": "loggers", "type": "submit", "label": "Loggers"},
+        ])
+        if result == "metadata":
+            handle_metadata()
+        elif result == "loggers":
+            handle_loggers()
+        else:
+            put_reload_button()
     
 if os.getenv("SENTRY_DSN"):
     wizard = config(js_file="/data/scripts/sentry.js")(wizard)
@@ -295,6 +298,7 @@ def handle_loggers():
                 put_error(f"Logger data {filename}: {traceback.format_exc()}")
             else:
                 shutil.move(temp_path, definitive_path)
+                to_parquet.configure(lock=definitive_path.name).defer(file_path=str(definitive_path))
                 put_success(f"Logger data {filename} have been imported sucessfully.")
 
     shutil.rmtree(TEMP_DIR)
