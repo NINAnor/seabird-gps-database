@@ -73,7 +73,7 @@ class TDR2Parser(TDRParser):
 class PathtrackPressParser(Parser):
     DATATYPE = "tdr"
     DIVIDER = "*" * 85 + "\n"
-    HEAD = DIVIDER + "PathTrack Raw Pressure Data File Downloaded from Base Station 50854 (NanoFix Pressure Format)"
+    HEAD = DIVIDER + "PathTrack Raw Pressure Data File Downloaded from Base Station"
     FIELDS = (
         "year",
         "month",
@@ -127,9 +127,19 @@ class SimpleTDR(CSVParser):
     ]
 
 
+class SimpleTDRVariantDate(CSVParser):
+    DATATYPE = "tdr"
+    FIELDS = [
+        "Date/Time Stamp",
+        "Pressure",
+        "Temp",
+    ]
+
+
 PARSERS = [
     TDRParser,
     TDR2Parser,
     PathtrackPressParser,
     SimpleTDR,
+    SimpleTDRVariantDate,
 ]
