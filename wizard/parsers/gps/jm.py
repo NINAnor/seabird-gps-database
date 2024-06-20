@@ -1,18 +1,20 @@
 import io
 import csv
+import re
 
 import pandas as pd
 
 from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_chunk_contains
 
-class GPS2JMParser(Parser):
+class GPS2JMParser7_5(Parser):
     '''
-    Parser for 2Jm format
+    Parser for 2Jm format v 7.5
     '''
     DATATYPE = "gps_2jm"
     # TODO: define fields
     FIELDS = [str(x) for x in range(0,13)]
+    VERSION = "v7.5"
     SEPARATOR = " "
     ENDINGS = [
         "[EOF]",
@@ -42,23 +44,35 @@ class GPS2JMParser(Parser):
     #     "ring_nr": None,
     #     "trip_nr": None,
     # }
+
+    def _fix_content(self, data):
+        return data
     
     def __init__(self, parsable: Parsable):
         super().__init__(parsable)
 
-        with self.file.get_stream(binary=False) as stream:
+        with self.file.get_stream(binary=False, errors='backslashreplace') as stream:
+            # TODO: check the first byte instead of the whole stream chunk
             if not stream.seekable():
                 self._raise_not_supported('Stream not seekable')
         
             if not stream_chunk_contains(stream, 30, "2JmGPS-LOG"):
                 self._raise_not_supported(f"Stream must start with 2JmGPS-LOG")
         
-            groups = stream.read().split('\n\n')[1:]
+            groups = stream.read().split('\n\n')
+            head = groups.pop(0)
+
+            if self.VERSION not in head:
+                self._raise_not_supported(f"Version not supported")
+
             data = None
             for group in groups:
                 if group in self.ENDINGS:
                     break
                 data = group
+
+
+            data = self._fix_content(data)
 
             content = io.StringIO(data)
 
@@ -69,6 +83,24 @@ class GPS2JMParser(Parser):
 
             self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
+
+regex = re.compile(r'\s{2,10}', re.MULTILINE)
+
+class GPS2JMParser8(GPS2JMParser7_5):
+    VERSION = "v8"
+
+    def _fix_content(self, data: str):
+        '''
+        In version 8 there is a strange notation using the whitespace
+        also to right align the number for a specific column
+        In this case replace the multiple spaces
+        '''
+        return regex.sub(
+            ' ',
+            data
+        )
+
 PARSERS = [
-    GPS2JMParser,
+    GPS2JMParser7_5,
+    GPS2JMParser8,
 ]

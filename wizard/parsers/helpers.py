@@ -18,7 +18,6 @@ def stream_chunk_match(stream, length, text):
     position = stream.tell()
     chunk = stream.read(length)
     stream.seek(position)
-    print(chunk)
     return re.search(text, chunk)
 
 

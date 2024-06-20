@@ -25,10 +25,11 @@ class Parsable:
         self.encoding = self._detect_encoding()
         
     @contextmanager
-    def get_stream(self, binary=False):
+    def get_stream(self, binary=False, errors="strict"):
         params = {
             'mode': 'rb' if binary else 'r',
-            'encoding': None if binary else self.encoding
+            'encoding': None if binary else self.encoding,
+            'errors': errors if not binary else None,
         }
         stream = open(self._file_path, **params)
         yield stream
@@ -41,7 +42,7 @@ class Parsable:
                 detector.feed(line)
                 if detector.done: break
             detector.close()
-            logging.debug(detector.result)
+            print(detector.result)
             return detector.result['encoding']
 
 
