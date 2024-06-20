@@ -91,6 +91,34 @@ regex = re.compile(r'\s{2,10}', re.MULTILINE)
 
 class GPS2JMParser8(GPS2JMParser7_5):
     VERSION = "v8"
+    FIELDS = [
+        "date", "time", 
+        "latitude", "latitude_decimal", 'n', 
+        "longitude", "longitude_decimal", 'e', 
+        "satellite", 
+        "voltage", "speed", "altitude", "distance"
+    ]
+    MAPPINGS = {
+        "id": "",
+        "date": "date",
+        "time": "time",
+        "latitude": None,
+        "longitude": None,
+        "altitude": "altitude",
+        "speed_km_h": "speed",
+        "type": None,
+        "distance": "distance",
+        "course": None,
+        "hdop": None,
+        "pdop": None,
+        "satellites_count": "satellite",
+        "direction_deg": None,
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
 
     def _fix_content(self, data: str):
         '''
@@ -113,32 +141,38 @@ class GPS2JMParser8Alternative(Parser):
     '''
     DATATYPE = "gps_2jm"
     # TODO: define fields
-    FIELDS = [str(x) for x in range(0,11)]
+    FIELDS = [
+        "date", "time", 
+        "latitude", "latitude_decimal", 'n', 
+        "longitude", "longitude_decimal", 'e', 
+        "satellite", 
+        "voltage", "speed", "altitude", "distance"
+    ]
     VERSION = "v8"
     SEPARATOR = " "
 
     # TODO: understand the fields first
-    # MAPPINGS = {
-    #     "id": "",
-    #     "date": None,
-    #     "time": None,
-    #     "latitude": None,
-    #     "longitude": None,
-    #     "altitude": None,
-    #     "speed_km_h": None,
-    #     "type": None,
-    #     "distance": None,
-    #     "course": None,
-    #     "hdop": None,
-    #     "pdop": None,
-    #     "satellites_count": None,
-    #     "direction_deg": None,
-    #     "temperature": None,
-    #     "solar_I_mA": None,
-    #     "bat_soc_pct": None,
-    #     "ring_nr": None,
-    #     "trip_nr": None,
-    # }
+    MAPPINGS = {
+        "id": "",
+        "date": "date",
+        "time": "time",
+        "latitude": None,
+        "longitude": None,
+        "altitude": "altitude",
+        "speed_km_h": "speed",
+        "type": None,
+        "distance": "distance",
+        "course": None,
+        "hdop": None,
+        "pdop": None,
+        "satellites_count": "satellite",
+        "direction_deg": None,
+        "temperature": None,
+        "solar_I_mA": None,
+        "bat_soc_pct": None,
+        "ring_nr": None,
+        "trip_nr": None,
+    }
 
     def _fix_content(self, data: str):
         '''
