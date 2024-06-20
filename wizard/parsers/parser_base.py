@@ -110,6 +110,11 @@ class CSVParser(Parser):
     FIELDS = []
     SEPARATOR = ','
     SKIP_INITIAL_SPACE = True
+    HEADER = 1
+
+    def _check_headers(self, header):
+        if header != self.FIELDS:
+            self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
 
     def __init__(self, parsable: Parsable):
         super().__init__(parsable)
@@ -120,12 +125,10 @@ class CSVParser(Parser):
 
             reader = csv.reader(stream, delimiter=self.SEPARATOR, skipinitialspace=self.SKIP_INITIAL_SPACE)
             header = next(reader)
-            if header != self.FIELDS:
-                self._raise_not_supported(f"Stream have a header different than expected, {header} != {self.FIELDS}")
+            self._check_headers(header)
+            stream.seek(0)
 
-                stream.seek(0)
-
-            self.data = pd.read_csv(stream, header=1, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            self.data = pd.read_csv(stream, header=self.HEADER, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
 
 
 class ExcelParser(Parser):

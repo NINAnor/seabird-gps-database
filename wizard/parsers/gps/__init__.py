@@ -10,8 +10,9 @@ from .axytrek import PARSERS as AXYTREK
 from .interrex import PARSERS as INTERREX
 from .ornitela import PARSERS as ORNITELA
 from .mataki import PARSERS as MATAKI
+from .ecotone import PARSERS as ECOTONE
 
 PARSERS = [
     GPXParser,
 ] + IGOUT + CATLOG + BASE + JM + UNKNOWN + PATHTRACK + \
-    HO11 + AXYTREK + INTERREX + ORNITELA + MATAKI
+    HO11 + AXYTREK + INTERREX + ORNITELA + MATAKI + ECOTONE
