@@ -9,7 +9,7 @@ create table logger(
 create table logger_instrumentation(
     id integer primary key generated always as identity,
     logger text references logger(id) not null,
-    ring text references ring(id) not null,
+    deployment_id integer references deployment(id) not null,
     status text,
     sampling_freq_s decimal,
     mass_g decimal,

@@ -127,6 +127,8 @@ CREATE TYPE public.procrastinate_job_status AS ENUM (
 CREATE FUNCTION public.import() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+declare
+    deployment_id integer;
 begin
     -- perform some checks
     if safe_cast_bool(new.gps_data_collected) and new.gps_raw_datafile_name is null then
@@ -162,8 +164,8 @@ begin
     end if;
     perform import_animal_and_ring(new);
     perform import_colony(new);
-    perform import_deployment_and_chick(new);
-    perform import_logger_and_logger_instrumentation(new);
+    select import_deployment_and_chick(new) into deployment_id;
+    perform import_logger_and_logger_instrumentation(new, deployment_id);
     return null;
 exception
     when others then
@@ -377,7 +379,7 @@ $$;
 -- Name: import_deployment_and_chick(public.import); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.import_deployment_and_chick(new public.import) RETURNS void
+CREATE FUNCTION public.import_deployment_and_chick(new public.import) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 declare
@@ -460,6 +462,7 @@ begin
             (new.chick3_age_retrieval_days)::int
         );
     end if;
+    return deployment_id;
 end;
 $$;
 
@@ -585,6 +588,152 @@ begin
             default,
             new.other_sensor_logger_id,
             new.ring_number,
+            new.other_sensor_status,
+            (new.other_sensor_record_frequency_sec)::decimal,
+            (new.other_sensor_logger_mass_g)::decimal,
+            new.other_sensor_attachment_method,
+            new.other_sensor_mount_method,
+            (new.other_sensor_startup_date::date +
+             new.other_sensor_startup_time::time) at time zone
+             new.other_sensor_deployment_retrieval_time_zone,
+            (new.other_sensor_deployment_time::date +
+             new.other_sensor_deployment_time::time) at time zone
+             new.other_sensor_deployment_retrieval_time_zone,
+            case when new.other_sensor_retrieval_date is null then null else
+                (new.other_sensor_retrieval_date::date +
+                 new.other_sensor_retrieval_time::time) at time zone
+                 new.other_sensor_deployment_retrieval_time_zone
+            end,
+            new.other_sensor_raw_datafile_name,
+            null,
+            new.other_sensor_comment
+        );
+    end if;
+end;
+$$;
+
+
+--
+-- Name: import_logger_and_logger_instrumentation(public.import, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.import_logger_and_logger_instrumentation(new public.import, deployment_id integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+declare
+    tdr_file text;
+    tdr_list text[];
+begin
+    if new.gps_deployment_date is not null then
+        insert into logger values(
+            new.gps_logger_id,
+            'gps',
+            new.gps_logger_model
+        ) on conflict do nothing;
+        insert into logger_instrumentation values(
+            default,
+            new.gps_logger_id,
+            deployment_id,
+            new.gps_status,
+            (new.gps_record_frequency_sec)::decimal,
+            (new.gps_logger_mass_g)::decimal,
+            new.gps_attachment_method,
+            new.gps_mount_method,
+            (new.gps_startup_date::date +
+             new.gps_startup_time::time) at time zone
+             new.gps_deployment_retrieval_time_zone,
+            (new.gps_deployment_date::date +
+             new.gps_deployment_time::time) at time zone
+             new.gps_deployment_retrieval_time_zone,
+            case when new.gps_retrieval_date is null then null else
+                (new.gps_retrieval_date::date +
+                 new.gps_retrieval_time::time) at time zone
+                 new.gps_deployment_retrieval_time_zone
+            end,
+            new.gps_raw_datafile_name,
+            null,
+            new.gps_comment
+        );
+    end if;
+    if new.gls_deployment_date is not null then
+        insert into logger values(
+            new.gls_logger_id,
+            'gls',
+            new.gls_logger_model
+        ) on conflict do nothing;
+        insert into logger_instrumentation values(
+            default,
+            new.gls_logger_id,
+            deployment_id,
+            new.gls_status,
+            (new.gls_record_frequency_sec)::decimal,
+            (new.gls_logger_mass_g)::decimal,
+            new.gls_attachment_method,
+            new.gls_mount_method,
+            (new.gls_startup_date::date +
+             new.gls_startup_time::time) at time zone
+             'UTC',
+            (new.gls_deployment_date::date +
+             new.gls_deployment_time::time) at time zone
+             new.gls_deployment_retrieval_time_zone,
+            case when new.gls_retrieval_date is null then null else
+                (new.gls_retrieval_date::date +
+                 new.gls_retrieval_time::time) at time zone
+                 new.gls_deployment_retrieval_time_zone
+            end,
+            new.gls_raw_datafile_name,
+            case when safe_cast_bool(new.logging_for_seatrack) then 'seatrack' else null end,
+            new.gls_comment
+        );
+    end if;
+    if new.tdr_deployment_date is not null then
+        insert into logger values(
+            new.tdr_logger_id,
+            'tdr',
+            new.tdr_logger_model
+        ) on conflict do nothing;
+        if new.tdr_raw_datafile_name is not null then
+            tdr_list = string_to_array(new.tdr_raw_datafile_name, ';');
+        else
+            tdr_list = array[null];
+        end if;
+        foreach tdr_file in array tdr_list loop
+            insert into logger_instrumentation values(
+                default,
+                new.tdr_logger_id,
+                deployment_id,
+                new.tdr_status,
+                (new.tdr_record_frequency_sec)::decimal,
+                (new.tdr_logger_mass_g)::decimal,
+                new.tdr_attachment_method,
+                new.tdr_mount_method,
+                (new.tdr_startup_date::date +
+                new.tdr_startup_time::time) at time zone
+                new.tdr_deployment_retrieval_time_zone,
+                (new.tdr_deployment_date::date +
+                new.tdr_deployment_time::time) at time zone
+                new.tdr_deployment_retrieval_time_zone,
+                case when new.tdr_retrieval_date is null then null else
+                    (new.tdr_retrieval_date::date +
+                    new.tdr_retrieval_time::time) at time zone
+                    new.tdr_deployment_retrieval_time_zone
+                end,
+                tdr_file,
+                null,
+                new.tdr_comment
+            );
+        end loop;
+    end if;
+    if new.other_sensor_deployment_date is not null then
+        insert into logger values(
+            new.other_sensor_logger_id,
+            'other_sensor',
+            new.other_sensor_logger_model
+        ) on conflict do nothing;
+        insert into deployment values(
+            default,
+            new.other_sensor_logger_id,
+            deployment_id,
             new.other_sensor_status,
             (new.other_sensor_record_frequency_sec)::decimal,
             (new.other_sensor_logger_mass_g)::decimal,
@@ -1169,7 +1318,7 @@ CREATE TABLE public.logger (
 CREATE TABLE public.logger_instrumentation (
     id integer NOT NULL,
     logger text NOT NULL,
-    ring text NOT NULL,
+    deployment_id integer NOT NULL,
     status text,
     sampling_freq_s numeric,
     mass_g numeric,
@@ -1189,9 +1338,18 @@ CREATE TABLE public.logger_instrumentation (
 --
 
 CREATE VIEW public.flat_logger_files AS
+ WITH has_logger_type AS (
+         SELECT d.id,
+            array_agg(DISTINCT l_1.type) AS types
+           FROM ((public.deployment d
+             JOIN public.logger_instrumentation li_1 ON ((li_1.deployment_id = d.id)))
+             JOIN public.logger l_1 ON ((li_1.logger = l_1.id)))
+          GROUP BY d.id
+        )
  SELECT li.id,
     li.logger,
-    li.ring,
+    h.types AS related_logger_types,
+    li.deployment_id,
     li.status,
     li.sampling_freq_s,
     li.mass_g,
@@ -1205,7 +1363,8 @@ CREATE VIEW public.flat_logger_files AS
     li.comment,
     l.type,
     l.model
-   FROM (public.logger_instrumentation li
+   FROM ((public.logger_instrumentation li
+     JOIN has_logger_type h ON ((h.id = li.deployment_id)))
      JOIN public.logger l ON ((li.logger = l.id)));
 
 
@@ -1568,19 +1727,19 @@ ALTER TABLE ONLY public.deployment
 
 
 --
+-- Name: logger_instrumentation logger_instrumentation_deployment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.logger_instrumentation
+    ADD CONSTRAINT logger_instrumentation_deployment_id_fkey FOREIGN KEY (deployment_id) REFERENCES public.deployment(id);
+
+
+--
 -- Name: logger_instrumentation logger_instrumentation_logger_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.logger_instrumentation
     ADD CONSTRAINT logger_instrumentation_logger_fkey FOREIGN KEY (logger) REFERENCES public.logger(id);
-
-
---
--- Name: logger_instrumentation logger_instrumentation_ring_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.logger_instrumentation
-    ADD CONSTRAINT logger_instrumentation_ring_fkey FOREIGN KEY (ring) REFERENCES public.ring(id);
 
 
 --
@@ -1638,4 +1797,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240314145815'),
     ('20240314145816'),
     ('20240508145816'),
-    ('20240508145817');
+    ('20240508145817'),
+    ('20240508145818'),
+    ('20240508145820');
