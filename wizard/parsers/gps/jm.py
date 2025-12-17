@@ -8,6 +8,14 @@ from parsers.parser_base import Parser, Parsable
 from parsers.helpers import stream_chunk_contains
 
 
+def signed(val, direction):
+    val = float(val)
+    if direction in ("S", "W"):
+        return -val
+    return val
+
+
+
 # Earth&Ocean mGPS-2
 
 class GPS2JMParser7_5(Parser):
@@ -142,11 +150,17 @@ class GPS2JMParser8Alternative(Parser):
     DATATYPE = "gps_2jm"
     # TODO: define fields
     FIELDS = [
-        "date", "time", 
-        "latitude", "latitude_decimal", 'n', 
-        "longitude", "longitude_decimal", 'e', 
-        "satellite", 
-        "voltage", "speed", "altitude", "distance"
+        "UTC_date",
+        "UTC_time",
+        "Latitude",
+        "Latitude_dir",
+        "Longitude",
+        "Longitude_dir",
+        "satcount",
+        "hdop",
+        "speed_km_h",
+        "altitude_m",
+        "direction_deg",
     ]
     VERSION = "v8"
     SEPARATOR = " "
@@ -154,19 +168,19 @@ class GPS2JMParser8Alternative(Parser):
     # TODO: understand the fields first
     MAPPINGS = {
         "id": "",
-        "date": "date",
-        "time": "time",
-        "latitude": None,
-        "longitude": None,
-        "altitude": "altitude",
-        "speed_km_h": "speed",
+        "date": "UTC_date",
+        "time": "UTC_time",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "altitude": "altitude_m",
+        "speed_km_h": "speed_km_h",
         "type": None,
-        "distance": "distance",
+        "distance": None,
         "course": None,
         "hdop": None,
         "pdop": None,
-        "satellites_count": "satellite",
-        "direction_deg": None,
+        "satellites_count": "satcount",
+        "direction_deg": "direction_deg",
         "temperature": None,
         "solar_I_mA": None,
         "bat_soc_pct": None,
@@ -207,7 +221,15 @@ class GPS2JMParser8Alternative(Parser):
             if len(header) != len(self.FIELDS):
                 self._raise_not_supported(f"Stream have fields different than expected, {len(header)} != {len(self.FIELDS)}")
 
-            self.data = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+            df = pd.read_csv(content, header=0, names=self.FIELDS, sep=self.SEPARATOR, index_col=False)
+
+            df["Latitude"] = [
+                signed(v, d) for v, d in zip(df["Latitude"], df["Latitude_dir"])
+            ]
+            df["Longitude"] = [
+                signed(v, d) for v, d in zip(df["Longitude"], df["Longitude_dir"])
+            ]
+            self.data = df
 
 
 PARSERS = [
