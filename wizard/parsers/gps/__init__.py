@@ -1,6 +1,5 @@
 from .axytrek import PARSERS as AXYTREK
 from .base import PARSERS as BASE
-from .blk import PARSERS as BLK
 from .catlog import PARSERS as CATLOG
 from .ecotone import PARSERS as ECOTONE
 from .gpx import GPXParser
@@ -29,5 +28,4 @@ PARSERS = (
     + ORNITELA
     + MATAKI
     + ECOTONE
-    + BLK
 )
