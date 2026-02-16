@@ -2,12 +2,9 @@
 import datetime
 import io
 import json
-import logging
 import os
 import os.path
 import pathlib
-import shutil
-import tempfile
 import traceback
 from collections import defaultdict
 
@@ -15,8 +12,6 @@ import openpyxl
 import orjson
 import requests
 from dateutil import parser
-from gps_logger_parser.parser import detect_file
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pywebio import config, start_server
 from pywebio.input import NUMBER, actions, file_upload, input, input_group
 from pywebio.output import (
@@ -33,34 +28,16 @@ from pywebio.output import (
 )
 from pywebio.session import run_js
 
-if os.getenv("SENTRY_DSN"):
-    import sentry_sdk
-
-    sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"))
-
-env = Environment(
-    loader=FileSystemLoader("./templates"), autoescape=select_autoescape()
+from seapop_wizard.settings import (
+    ACCEPTED_EXTENSIONS,
+    LOGGERS_PATH,
+    POSTGREST_TOKEN,
+    POSTGREST_URL,
+    SPREADSHEETS_PATH,
+    template_engine,
+    SENTRY_DSN,
 )
-
-
-logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
-
-POSTGREST_URL = os.getenv("POSTGREST_URL", "http://localhost:3000")
-POSTGREST_TOKEN = os.getenv("POSTGREST_TOKEN")
-TO_PARQUET = os.getenv("TO_PARQUET", "False").lower() in ("true", "1", "t")
-ACCEPTED_EXTENSIONS = os.getenv(
-    "ACCEPTED_EXTENSIONS", ".csv,.pos,.gpx,.txt,.log"
-).split(",")
-ACCEPTED_EXTENSIONS += [ext.upper() for ext in ACCEPTED_EXTENSIONS]
-DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", "/data/"))
-
-LOGGERS_PATH = DATA_PATH / "loggers"
-SPREADSHEETS_PATH = DATA_PATH / "metadata"
-PARQUET_PATH = DATA_PATH / "parquet"
-
-PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH, PARQUET_PATH]
-for path in PATHS:
-    path.mkdir(exist_ok=True)
+from seapop_wizard.settings import log as logging
 
 
 def fix_string(value):
@@ -94,14 +71,12 @@ FIX_COLUMNS = defaultdict(
     },
 )
 
-logging.debug(os.environ)
-
 
 def print_response_error(instance, response, filename=None):
     try:
         body = response.json()
         no_detail = {k: v for k, v in body.items() if k != "details"}
-        template = env.get_template("import_error.html")
+        template = template_engine.get_template("import_error.html")
         detail = {}
         detail_text = body.get("details")
         try:
@@ -118,8 +93,8 @@ def print_response_error(instance, response, filename=None):
                 filename=filename,
             )
         )
-    except:
-        logging.warn(traceback.format_exc())
+    except Exception:
+        logging.error("error printing error")
         put_error(str(instance) + "\n" + response.text)
 
 
@@ -166,7 +141,7 @@ def wizard():
         put_reload_button()
 
 
-if os.getenv("SENTRY_DSN"):
+if SENTRY_DSN:
     wizard = config(js_file="/data/scripts/sentry.js")(wizard)
 
 
@@ -211,7 +186,7 @@ def handle_metadata():
     MAX_CONSECUTIVE_EMPTY_LINES = 200
 
     data = []
-    for index, file in enumerate(user_inputs["files"]):
+    for _, file in enumerate(user_inputs["files"]):
         workbook = openpyxl.load_workbook(io.BytesIO(file["content"]), data_only=True)
         rows = workbook["METADATA"].iter_rows()
         for _ in range(user_inputs["ignorelines"]):
@@ -239,7 +214,7 @@ def handle_metadata():
             )
 
             if missing - can_be_empty:
-                put_error(f"Some properties are required to proceed, please fix them")
+                put_error("Some properties are required to proceed, please fix them")
                 put_reload_button()
                 return
 
@@ -305,18 +280,13 @@ def handle_metadata():
             name, first_dot, rest = pathlib.Path(f["filename"]).name.partition(".")
             filepath = SPREADSHEETS_PATH / f"{name}_1.{rest}"
 
-        with open(str(filepath), "wb") as output:
+        with filepath.open("wb") as output:
             output.write(f["content"])
 
     put_reload_button()
 
 
 def handle_loggers():
-    TEMP_DIR = pathlib.Path(tempfile.mkdtemp())
-    headers = {}
-    if POSTGREST_TOKEN:
-        headers["Authorization"] = "Bearer " + POSTGREST_TOKEN
-
     inputs = input_group(
         "Import Loggers",
         [
@@ -333,30 +303,17 @@ def handle_loggers():
 
     for logger_file in logger_files:
         filename = logger_file["filename"]
-        temp_path = TEMP_DIR / filename
-        definitive_path = LOGGERS_PATH / filename
+        s3_path = LOGGERS_PATH / filename
 
-        # TODO: check consistency also with database, is there a logger instrumentator already defined
-        if definitive_path.exists() or temp_path.exists():
+        # TODO: check consistency also with database, is there a row containing a logger instrumentator file with the name of the file uploaded by the user
+        if s3_path.exists():
             put_warning(f"File {filename} exists already, will be skipped")
         else:
-            with open(str(temp_path), "wb") as output:
+            with s3_path.open("wb") as output:
                 output.write(logger_file["content"])
-            try:
-                parser = detect_file(temp_path)
-                if TO_PARQUET:
-                    parser.write_parquet(PARQUET_PATH)
-            except NotImplementedError:
-                put_error(f"Logger data {filename}: Format not supported")
-            except Exception as instance:
-                put_error(f"Logger data {filename}: {traceback.format_exc()}")
-            else:
-                shutil.move(temp_path, definitive_path)
                 put_success(
                     f"Logger data {filename} have been imported sucessfully. Files are converted every minute."
                 )
-
-    shutil.rmtree(TEMP_DIR)
     put_reload_button()
 
 

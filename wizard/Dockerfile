@@ -7,9 +7,9 @@ COPY pyproject.toml uv.lock .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-COPY wizard.py tasks.py logger.py entrypoint.sh .
+COPY src entrypoint.sh .
 COPY templates/ templates/
 
 EXPOSE 8000/TCP
 ENTRYPOINT [ "./entrypoint.sh" ]
-CMD ["uv", "run", "./wizard.py"]
+CMD ["uv", "run", "seapop-wizard"]
