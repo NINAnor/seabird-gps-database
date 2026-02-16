@@ -19,6 +19,7 @@ dependencies = [
     "typer>=0.21.1",
     "schedule>=1.2.2",
     "structlog>=25.5.0",
+    "gps-logger-parser",
 ]
 requires-python = ">=3.11"
 license = {text = "GPLv3"}
@@ -38,3 +39,6 @@ select = ["E", "W", "I", "F", "UP", "S", "B", "A", "COM", "LOG", "PTH", "Q"]
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "DEBUG"
+
+[tool.uv.sources]
+gps-logger-parser = { git = "https://github.com/NINAnor/gps-logger-parser" }
