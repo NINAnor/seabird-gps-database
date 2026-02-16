@@ -17,7 +17,9 @@ const dataProvider = postgrestRestProvider({
     apiUrl: "/postgrest",
     httpClient,
     defaultListOp: "eq",
-    primaryKeys: new Map(),
+    primaryKeys: new Map([
+        ["colony", ["name"]],
+    ]),
     schema: () => "public",
 });
 
