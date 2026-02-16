@@ -19,6 +19,3 @@ def configure_logger(logging_level=logging.NOTSET):
         cache_logger_on_first_use=False,
     )
     return structlog.get_logger()
-
-
-log = configure_logger(logging.INFO)

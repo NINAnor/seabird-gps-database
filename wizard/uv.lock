@@ -345,6 +345,15 @@ wheels = [
 ]
 
 [[package]]
+name = "django-environ"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/18/3c/60983e6ec9b24a8d8588eecebfd21123cba980bce0a905807a27692f0860/django_environ-0.13.0.tar.gz", hash = "sha256:6c401e4c219442c2c4588c2116d5292b5484a6f69163ed09cd41f3943bfb645f", size = 63529 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/00/3767393ece946084e1c6830a33ffb8e39d68642e27ad5ac7d4c8bd5de866/django_environ-0.13.0-py3-none-any.whl", hash = "sha256:37799d14cd78222c6fd8298e48bfe17965ff8e586091ad66a463e52e0e7b799e", size = 20682 },
+]
+
+[[package]]
 name = "et-xmlfile"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1244,9 +1253,11 @@ wheels = [
 [[package]]
 name = "seapop-wizard"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "chardet" },
+    { name = "django-environ" },
+    { name = "fsspec" },
     { name = "gps-logger-parser" },
     { name = "gpxpy" },
     { name = "jinja2" },
@@ -1256,10 +1267,12 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pywebio" },
     { name = "requests" },
+    { name = "s3fs" },
     { name = "schedule" },
     { name = "sentry-sdk" },
     { name = "structlog" },
     { name = "typer" },
+    { name = "universal-pathlib" },
 ]
 
 [package.dev-dependencies]
@@ -1270,6 +1283,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "chardet", specifier = ">=5.2.0" },
+    { name = "django-environ", specifier = ">=0.12.1" },
+    { name = "fsspec", specifier = ">=2026.2.0" },
     { name = "gps-logger-parser", git = "https://github.com/NINAnor/gps-logger-parser" },
     { name = "gpxpy", specifier = ">=1.6.2" },
     { name = "jinja2", specifier = ">=3.1.3" },
@@ -1279,10 +1294,12 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=14.0.2" },
     { name = "pywebio", specifier = ">=1.7.0" },
     { name = "requests", specifier = ">=2.28.1" },
+    { name = "s3fs", specifier = ">=2026.2.0" },
     { name = "schedule", specifier = ">=1.2.2" },
     { name = "sentry-sdk", specifier = ">=1.40.5" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "typer", specifier = ">=0.21.1" },
+    { name = "universal-pathlib", specifier = ">=0.3.9" },
 ]
 
 [package.metadata.requires-dev]
