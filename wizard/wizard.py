@@ -1,52 +1,62 @@
 #!/usr/bin/env python3
-
+import datetime
 import io
+import json
 import logging
 import os
 import os.path
-import traceback
-import json
 import pathlib
-import tempfile
 import shutil
-import datetime
-from dateutil import parser
+import tempfile
+import traceback
 from collections import defaultdict
 
 import openpyxl
 import orjson
 import requests
-from pywebio import start_server, config
-from pywebio.input import NUMBER, actions, file_upload, input, input_group
-from pywebio.output import clear, put_error, put_success, put_text, put_button, put_html, put_table, put_warning, put_link, put_widget
-from pywebio.session import run_js
+from dateutil import parser
+from gps_logger_parser.parser import detect_file
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pywebio import config, start_server
+from pywebio.input import NUMBER, actions, file_upload, input, input_group
+from pywebio.output import (
+    clear,
+    put_button,
+    put_error,
+    put_html,
+    put_link,
+    put_success,
+    put_table,
+    put_text,
+    put_warning,
+    put_widget,
+)
+from pywebio.session import run_js
 
 if os.getenv("SENTRY_DSN"):
     import sentry_sdk
-    sentry_sdk.init(
-        dsn=os.getenv("SENTRY_DSN")
-    )
+
+    sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"))
 
 env = Environment(
-    loader=FileSystemLoader("./templates"),
-    autoescape=select_autoescape()
+    loader=FileSystemLoader("./templates"), autoescape=select_autoescape()
 )
 
-from parsers.parser import detect_file
 
 logging.basicConfig(level=os.getenv("LOGGING", "INFO"))
 
 POSTGREST_URL = os.getenv("POSTGREST_URL", "http://localhost:3000")
 POSTGREST_TOKEN = os.getenv("POSTGREST_TOKEN")
-TO_PARQUET = os.getenv("TO_PARQUET", 'False').lower() in ('true', '1', 't')
-ACCEPTED_EXTENSIONS = os.getenv("ACCEPTED_EXTENSIONS", '.csv,.pos,.gpx,.txt,.log').split(',')
+TO_PARQUET = os.getenv("TO_PARQUET", "False").lower() in ("true", "1", "t")
+ACCEPTED_EXTENSIONS = os.getenv(
+    "ACCEPTED_EXTENSIONS", ".csv,.pos,.gpx,.txt,.log"
+).split(",")
 ACCEPTED_EXTENSIONS += [ext.upper() for ext in ACCEPTED_EXTENSIONS]
-DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", '/data/'))
+DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", "/data/"))
 
-LOGGERS_PATH = DATA_PATH  / 'loggers'
-SPREADSHEETS_PATH = DATA_PATH  / 'metadata'
-PARQUET_PATH = DATA_PATH / 'parquet'
+LOGGERS_PATH = DATA_PATH / "loggers"
+SPREADSHEETS_PATH = DATA_PATH / "metadata"
+PARQUET_PATH = DATA_PATH / "parquet"
 
 PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH, PARQUET_PATH]
 for path in PATHS:
@@ -66,20 +76,23 @@ def fix_dates(value):
         return value
 
 
-FIX_COLUMNS = defaultdict(lambda: fix_string, {
-    'gps_startup_date': fix_dates,
-    'gps_deployment_date': fix_dates,
-    'gps_retrieval_date': fix_dates,
-    'gls_startup_date_gmt': fix_dates,
-    'gls_deployment_date': fix_dates,
-    'gls_retrieval_date': fix_dates,
-    'tdr_startup_date': fix_dates, 
-    'tdr_deployment_date': fix_dates,
-    'tdr_retrieval_date': fix_dates,
-    'other_sensor_startup_date': fix_dates, 
-    'other_sensor_deployment_date': fix_dates,
-    'other_sensor_retrieval_date': fix_dates,
-})
+FIX_COLUMNS = defaultdict(
+    lambda: fix_string,
+    {
+        "gps_startup_date": fix_dates,
+        "gps_deployment_date": fix_dates,
+        "gps_retrieval_date": fix_dates,
+        "gls_startup_date_gmt": fix_dates,
+        "gls_deployment_date": fix_dates,
+        "gls_retrieval_date": fix_dates,
+        "tdr_startup_date": fix_dates,
+        "tdr_deployment_date": fix_dates,
+        "tdr_retrieval_date": fix_dates,
+        "other_sensor_startup_date": fix_dates,
+        "other_sensor_deployment_date": fix_dates,
+        "other_sensor_retrieval_date": fix_dates,
+    },
+)
 
 logging.debug(os.environ)
 
@@ -87,31 +100,34 @@ logging.debug(os.environ)
 def print_response_error(instance, response, filename=None):
     try:
         body = response.json()
-        no_detail = {k:v for k,v in body.items() if k != 'details'}
+        no_detail = {k: v for k, v in body.items() if k != "details"}
         template = env.get_template("import_error.html")
         detail = {}
-        detail_text = body.get('details')
+        detail_text = body.get("details")
         try:
-            detail = json.loads(body.get('details'))
+            detail = json.loads(body.get("details"))
         except json.decoder.JSONDecodeError:
             pass
 
-        put_html(template.render(
-            headers=no_detail.keys(),
-            body=no_detail.values(),
-            details=detail or detail_text,
-            title=str(instance),
-            filename=filename,
-        ))
+        put_html(
+            template.render(
+                headers=no_detail.keys(),
+                body=no_detail.values(),
+                details=detail or detail_text,
+                title=str(instance),
+                filename=filename,
+            )
+        )
     except:
         logging.warn(traceback.format_exc())
         put_error(str(instance) + "\n" + response.text)
 
 
 def put_reload_button():
-    put_button("Upload new data", onclick=lambda: run_js('window.location.reload()'))
+    put_button("Upload new data", onclick=lambda: run_js("window.location.reload()"))
 
-tpl = '''
+
+tpl = """
 <div>
     <h5>Links</h5>
     <ul>
@@ -120,7 +136,8 @@ tpl = '''
     {{/contents}}
     </ul>
 </div>
-'''
+"""
+
 
 def wizard():
     put_widget(
@@ -166,16 +183,21 @@ def handle_metadata():
         )
         response.raise_for_status()
         fields = response.json()
-        expected_fields = set(e.get('column_name') for e in fields)
-        can_be_empty = set(e.get('column_name') for e in fields if e.get('is_nullable'))
+        expected_fields = set(e.get("column_name") for e in fields)
+        can_be_empty = set(e.get("column_name") for e in fields if e.get("is_nullable"))
     except Exception as instance:
-        put_error(f'Error while retriving list of valid import fields - {str(instance)}')
+        put_error(
+            f"Error while retriving list of valid import fields - {str(instance)}"
+        )
         return
-    
+
     user_inputs = input_group(
         "Import Metadata",
         [
-            file_upload("Select spreadsheets:", multiple=True, name="files", 
+            file_upload(
+                "Select spreadsheets:",
+                multiple=True,
+                name="files",
                 accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             ),
             input(
@@ -198,26 +220,41 @@ def handle_metadata():
         missing = expected_fields - set(header)
         extra = set(header) - expected_fields
         if (missing - can_be_empty) or extra:
-            errors = [(f, 'missing', f in can_be_empty, ) for f in missing] + [(f, 'extra', '-') for f in extra]
-            
+            errors = [
+                (
+                    f,
+                    "missing",
+                    f in can_be_empty,
+                )
+                for f in missing
+            ] + [(f, "extra", "-") for f in extra]
+
             errors.sort(key=lambda e: e[0])
             put_warning(f'Spreadsheet {file["filename"]} structure does not match')
-            put_table([
-                ('field', 'status', 'can be empty'),
-                *errors,
-            ])
+            put_table(
+                [
+                    ("field", "status", "can be empty"),
+                    *errors,
+                ]
+            )
 
             if missing - can_be_empty:
-                put_error(f'Some properties are required to proceed, please fix them')
+                put_error(f"Some properties are required to proceed, please fix them")
                 put_reload_button()
                 return
 
-            result = actions(buttons=[
-                {"label": "Ignore extra fields and missing fields", "value": "proceed", "color": "danger"},
-                {"label": "Upload new data", "value": "stop", "type": "cancel" },
-            ])
+            result = actions(
+                buttons=[
+                    {
+                        "label": "Ignore extra fields and missing fields",
+                        "value": "proceed",
+                        "color": "danger",
+                    },
+                    {"label": "Upload new data", "value": "stop", "type": "cancel"},
+                ]
+            )
             if not result:
-                run_js('window.location.reload()')
+                run_js("window.location.reload()")
                 return
 
         logging.debug(header)
@@ -225,7 +262,13 @@ def handle_metadata():
             row = [cell.value for cell in row]
             if any(row):
                 logging.debug(row)
-                data.append({k: FIX_COLUMNS[k](v) for k,v in zip(header, row) if k in expected_fields})
+                data.append(
+                    {
+                        k: FIX_COLUMNS[k](v)
+                        for k, v in zip(header, row)
+                        if k in expected_fields
+                    }
+                )
             elif MAX_CONSECUTIVE_EMPTY_LINES > 0:
                 MAX_CONSECUTIVE_EMPTY_LINES -= 1
             else:
@@ -259,10 +302,10 @@ def handle_metadata():
         filepath = SPREADSHEETS_PATH / f["filename"]
 
         if filepath.exists():
-            name, first_dot, rest = pathlib.Path(f["filename"]).name.partition('.')
-            filepath = SPREADSHEETS_PATH / f'{name}_1.{rest}'
+            name, first_dot, rest = pathlib.Path(f["filename"]).name.partition(".")
+            filepath = SPREADSHEETS_PATH / f"{name}_1.{rest}"
 
-        with open(str(filepath), 'wb') as output:
+        with open(str(filepath), "wb") as output:
             output.write(f["content"])
 
     put_reload_button()
@@ -277,8 +320,14 @@ def handle_loggers():
     inputs = input_group(
         "Import Loggers",
         [
-            file_upload("Select logger data:", multiple=True, accept=ACCEPTED_EXTENSIONS, name="files", max_size='800M'),
-        ]
+            file_upload(
+                "Select logger data:",
+                multiple=True,
+                accept=ACCEPTED_EXTENSIONS,
+                name="files",
+                max_size="800M",
+            ),
+        ],
     )
     logger_files = inputs["files"]
 
@@ -312,4 +361,4 @@ def handle_loggers():
 
 
 if __name__ == "__main__":
-    start_server(wizard, port=8000, debug=True, max_payload_size='800M')
+    start_server(wizard, port=8000, debug=True, max_payload_size="800M")

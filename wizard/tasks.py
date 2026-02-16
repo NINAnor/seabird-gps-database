@@ -4,9 +4,9 @@ import time
 
 import schedule
 import typer
+from gps_logger_parser.parser import detect_file
 
 from logger import log
-from parsers.parser import detect_file
 
 DATA_PATH = pathlib.Path(os.getenv("DATA_PATH", "/data/"))
 
