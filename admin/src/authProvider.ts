@@ -1,13 +1,18 @@
 import type { AuthProvider } from "react-admin";
+import { SignJWT } from "jose";
 
 const TOKEN_KEY = "auth_token";
 
 const authProvider: AuthProvider = {
   login: async ({ username, password }: { username: string; password: string }) => {
-    const token = password;
-    if (!token) {
-      throw new Error("Please enter a valid token");
+    if (!username || !password) {
+      throw new Error("Please enter both a role and a secret");
     }
+
+    const secret = new TextEncoder().encode(password);
+    const token = await new SignJWT({ role: username })
+      .setProtectedHeader({ alg: "HS256" })
+      .sign(secret);
 
     // Validate the token by making a test request to PostgREST
     const response = await fetch("/postgrest/", {
@@ -15,11 +20,11 @@ const authProvider: AuthProvider = {
     });
 
     if (!response.ok) {
-      throw new Error("Invalid token");
+      throw new Error("Invalid credentials");
     }
 
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem("username", username || "admin");
+    localStorage.setItem("username", username);
   },
 
   logout: async () => {
