@@ -1,11 +1,12 @@
 services:
   postgres:
     image: postgis/postgis:16-3.4
-    #command: "-c log_statement=all"
+    # command: "-c log_statement=all -c config_file=/etc/postgresql.conf"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # - ./postgresql.conf:/etc/postgresql.conf
     ports:
       - 5432:5432
   dbmate:
@@ -30,13 +31,14 @@ services:
       LOGGING: DEBUG
       TEST_DATA_PATH: /test_data
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
+      S3_BUCKET: ${S3_BUCKET:-seabird-gps-data}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
     tty: true
     stdin_open: true
     volumes:
-      - ./loggers_data:/app/loggers_data
-      - ./data:/data/
-      - ./wizard/parsers:/app/parsers
-      - ./test_data:/test_data
+      - ./wizard/src:/app/src
   queue:
     build:
       context: wizard
@@ -47,9 +49,12 @@ services:
       LOGGING: DEBUG
       TEST_DATA_PATH: /test_data
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
+      S3_BUCKET: ${S3_BUCKET:-seabird-gps-data}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
     volumes:
-      - ./data:/data/
-      - ./wizard/parsers:/app/parsers
+      - ./wizard/src:/app/src
   pgweb:
     image: sosedoff/pgweb:latest
     environment:
@@ -70,8 +75,6 @@ services:
     build: nginx
     ports:
       - 8000:80
-    volumes:
-      - ./data:/data/
 volumes:
   pgdata:
 
