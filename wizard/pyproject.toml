@@ -28,6 +28,10 @@ dependencies = [
 requires-python = ">=3.11"
 license = {text = "GPLv3"}
 
+[project.scripts]
+wizard = "seapop_wizard.wizard:main"
+tasks = "seapop_wizard.tasks:main"
+
 [dependency-groups]
 dev = [
   "pytest"
