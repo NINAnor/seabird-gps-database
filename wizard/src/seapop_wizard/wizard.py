@@ -300,9 +300,28 @@ def handle_loggers():
 
     for logger_file in logger_files:
         filename = logger_file["filename"]
-        s3_path = LOGGERS_PATH / filename
+        url = f"{POSTGREST_URL}/flat_logger_files?select=filename,deployment(colony,id,ring(id,animal(species))),type&filename=ilike.*{filename}&limit=1"
+        response = requests.get(url)
 
-        # TODO: check consistency also with database, is there a row containing a logger instrumentator file with the name of the file uploaded by the user
+        logger = response.json()
+
+        logging.info("result", url=url, data=logger)
+
+        if not logger:
+            put_error(f"File {filename} not found in metadata, will be skipped")
+            continue
+
+        logger = logger[0]
+        s3_path = (
+            LOGGERS_PATH
+            / f"colony={logger['deployment']['colony']}"
+            / f"species={logger['deployment']['ring']['animal']['species']}"
+            / f"ring={logger['deployment']['ring']['id']}"
+            / f"deployment={logger['deployment']['id']}"
+            / f"type={logger['type']}"
+            / filename
+        )
+
         if s3_path.exists():
             put_warning(f"File {filename} exists already, will be skipped")
         else:
