@@ -30,13 +30,23 @@ ACCEPTED_EXTENSIONS += [ext.upper() for ext in ACCEPTED_EXTENSIONS]
 # S3 Configuration
 S3_BUCKET = env("S3_BUCKET")
 S3_PREFIX = env("S3_PREFIX", default="")
+S3_ENDPOINT = env("AWS_S3_ENDPOINT")
+S3_ACCESS_KEY = env("AWS_ACCESS_KEY_ID")
+S3_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+
+BASE_PATH = UPath(
+    f"s3://{S3_BUCKET}/{S3_PREFIX}",
+    endpoint_url=S3_ENDPOINT,
+    key=S3_ACCESS_KEY,
+    secret=S3_SECRET_ACCESS_KEY,
+)
 
 # S3 paths using UPath
-LOGGERS_PATH = UPath(f"s3://{S3_BUCKET}/{S3_PREFIX}loggers")
-METADATA_PATH = UPath(f"s3://{S3_BUCKET}/{S3_PREFIX}metadata")
-PARQUET_PATH = UPath(f"s3://{S3_BUCKET}/{S3_PREFIX}parquet")
+LOGGERS_PATH = BASE_PATH / "loggers"
+SPREADSHEETS_PATH = BASE_PATH / "metadata"
+PARQUET_PATH = BASE_PATH / "parquet"
 
 # Ensure S3 directories exist
-PATHS = [LOGGERS_PATH, METADATA_PATH, PARQUET_PATH]
+PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH, PARQUET_PATH]
 for path in PATHS:
     path.mkdir(exist_ok=True)

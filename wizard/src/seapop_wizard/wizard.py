@@ -2,10 +2,7 @@
 import datetime
 import io
 import json
-import os
-import os.path
 import pathlib
-import traceback
 from collections import defaultdict
 
 import openpyxl
@@ -33,9 +30,9 @@ from seapop_wizard.settings import (
     LOGGERS_PATH,
     POSTGREST_TOKEN,
     POSTGREST_URL,
+    SENTRY_DSN,
     SPREADSHEETS_PATH,
     template_engine,
-    SENTRY_DSN,
 )
 from seapop_wizard.settings import log as logging
 
@@ -317,5 +314,9 @@ def handle_loggers():
     put_reload_button()
 
 
-if __name__ == "__main__":
+def main():
     start_server(wizard, port=8000, debug=True, max_payload_size="800M")
+
+
+if __name__ == "__main__":
+    main()
