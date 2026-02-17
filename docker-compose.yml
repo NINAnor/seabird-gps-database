@@ -22,6 +22,13 @@ services:
       PGRST_DB_URI: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres"
       PGRST_JWT_SECRET: ${JWT_SECRET}
       PGRST_DB_ANON_ROLE: web_anon
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.postgrest.rule=PathPrefix(`/postgrest`)"
+      - "traefik.http.routers.postgrest.entrypoints=web"
+      - "traefik.http.middlewares.postgrest-strip.stripprefix.prefixes=/postgrest"
+      - "traefik.http.routers.postgrest.middlewares=postgrest-strip"
+      - "traefik.http.services.postgrest.loadbalancer.server.port=3000"
   wizard:
     build:
       context: wizard
@@ -31,28 +38,36 @@ services:
       LOGGING: DEBUG
       TEST_DATA_PATH: /test_data
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
-      S3_BUCKET: ${S3_BUCKET:-seabird-gps-data}
+      S3_BUCKET: ${S3_BUCKET}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
+      S3_PREFIX: ${S3_PREFIX:-}
     tty: true
     stdin_open: true
     volumes:
       - ./wizard/src:/app/src
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wizard.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.wizard.entrypoints=web"
+      - "traefik.http.routers.wizard.priority=1"
+      - "traefik.http.services.wizard.loadbalancer.server.port=8000"
   queue:
     build:
       context: wizard
-    command: uv run tasks.py
+    command: uv run tasks
     environment:
       POSTGREST_URL: http://postgrest:3000
       POSTGREST_TOKEN: ${WRITER_TOKEN}
       LOGGING: DEBUG
       TEST_DATA_PATH: /test_data
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
-      S3_BUCKET: ${S3_BUCKET:-seabird-gps-data}
+      S3_BUCKET: ${S3_BUCKET}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
+      S3_PREFIX: ${S3_PREFIX:-}
     volumes:
       - ./wizard/src:/app/src
   pgweb:
@@ -60,6 +75,13 @@ services:
     environment:
       PGWEB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres?sslmode=disable
       WAIT_FOR: postgres:5432
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgweb.rule=PathPrefix(`/pgweb`)"
+      - "traefik.http.routers.pgweb.entrypoints=web"
+      - "traefik.http.middlewares.pgweb-strip.stripprefix.prefixes=/pgweb"
+      - "traefik.http.routers.pgweb.middlewares=pgweb-strip"
+      - "traefik.http.services.pgweb.loadbalancer.server.port=8081"
   admin:
     build:
       context: admin
@@ -71,10 +93,47 @@ services:
       - ./admin/vite.config.ts:/app/vite.config.ts
       - ./admin/tsconfig.json:/app/tsconfig.json
       - ./admin/tsconfig.app.json:/app/tsconfig.app.json
-  nginx:
-    build: nginx
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.services.admin.loadbalancer.server.port=5173"
+  rclone:
+    image: rclone/rclone:latest
+    command: 
+      - "serve"
+      - "http"
+      - "s3:${S3_BUCKET}/${S3_PREFIX:-}"
+      - "--addr"
+      - ":8888"
+      - "--read-only"
+    environment:
+      RCLONE_CONFIG_S3_TYPE: s3
+      RCLONE_CONFIG_S3_PROVIDER: ${S3_PROVIDER:-AWS}
+      RCLONE_CONFIG_S3_ENV_AUTH: "false"
+      RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      RCLONE_CONFIG_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
+      RCLONE_CONFIG_S3_ACL: private
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rclone.rule=PathPrefix(`/data`)"
+      - "traefik.http.routers.rclone.entrypoints=web"
+      - "traefik.http.middlewares.rclone-strip.stripprefix.prefixes=/data"
+      - "traefik.http.routers.rclone.middlewares=rclone-strip"
+      - "traefik.http.services.rclone.loadbalancer.server.port=8888"
+  traefik:
+    image: traefik:v2.11
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
     ports:
-      - 8000:80
+      - "8000:80"
+      - "8080:8080"
+    volumes:
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
 volumes:
   pgdata:
 
