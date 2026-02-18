@@ -79,6 +79,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.pgweb.rule=PathPrefix(`/pgweb`)"
       - "traefik.http.routers.pgweb.entrypoints=web"
+      - "traefik.http.routers.pgweb.priority=2"
       - "traefik.http.middlewares.pgweb-strip.stripprefix.prefixes=/pgweb"
       - "traefik.http.routers.pgweb.middlewares=pgweb-strip"
       - "traefik.http.services.pgweb.loadbalancer.server.port=8081"
