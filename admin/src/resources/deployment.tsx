@@ -1,36 +1,21 @@
-import {
-  List,
-  Datagrid,
-  TextField,
-  DateField,
-  NumberField,
-  BooleanField,
-  ReferenceField,
-  Show,
-  SimpleShowLayout,
-  Edit,
-  SimpleForm,
-  TextInput,
-  DateInput,
-  NumberInput,
-  BooleanInput,
-  ReferenceInput,
-  SelectInput,
-  required,
-} from "react-admin";
+import { List, Datagrid, TextField, DateField, NumberField, BooleanField, ReferenceField, Show, SimpleShowLayout, Edit, SimpleForm, TextInput, DateInput, NumberInput, BooleanInput, ReferenceInput, SelectInput, required } from "react-admin";
+import { BulkEditSexButton } from "./BulkEditSexButton";
 
 const DeploymentFilter = [
-    <TextInput label="Search" source="id" alwaysOn />,
-    <ReferenceInput source="ring" reference="ring" />,
-    <TextInput label="Colony" source="colony" />,
-    <TextInput label="Sex" source="sex" />,
-    <DateInput label="Date" source="date" />,
-    <TextInput label="Data Responsible" source="data_responsible" />,
+  <TextInput label="Search" source="id" alwaysOn />,
+  <ReferenceInput source="ring" reference="ring" />,
+  <TextInput label="Colony" source="colony" />,
+  <TextInput label="Sex" source="sex" />,
+  <DateInput label="Date" source="date" />,
+  <TextInput label="Data Responsible" source="data_responsible" />,
 ];
 
 export const DeploymentList = () => (
   <List perPage={25} filters={DeploymentFilter}>
-    <Datagrid rowClick="show">
+    <Datagrid
+      rowClick="show"
+      bulkActionButtons={<BulkEditSexButton resource="deployment" />}
+    >
       <TextField source="id" />
       <ReferenceField source="ring" reference="ring" />
       <DateField source="date" />
@@ -40,7 +25,7 @@ export const DeploymentList = () => (
       <TextField source="breeding_stage_deployment" />
       <TextField source="data_responsible" />
     </Datagrid>
-  </List>
+  </List >
 );
 
 export const DeploymentShow = () => (
