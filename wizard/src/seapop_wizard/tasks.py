@@ -34,6 +34,7 @@ def check_missing():
                         parser.as_table(),
                         str(parquet_path),
                         filesystem=parquet_path.fs,
+                        compression="zstd",
                     )
                 except NotImplementedError:
                     log.error(f"Unable to parse {filename}, skipping...")
