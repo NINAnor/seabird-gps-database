@@ -307,7 +307,7 @@ def handle_loggers():
 
         logging.info("result", url=url, data=logger)
 
-        if not logger or not logger[0]:
+        if not logger or not isinstance(logger, list) or len(logger) == 0:
             put_warning(
                 f"File {filename} not found in metadata, will be saved in unknown"
             )
