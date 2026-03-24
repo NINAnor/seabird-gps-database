@@ -307,20 +307,30 @@ def handle_loggers():
 
         logging.info("result", url=url, data=logger)
 
-        if not logger:
-            put_error(f"File {filename} not found in metadata, will be skipped")
-            continue
-
-        logger = logger[0]
-        s3_path = (
-            LOGGERS_PATH
-            / f"colony={logger['deployment']['colony']}"
-            / f"species={logger['deployment']['ring']['animal']['species']}"
-            / f"ring={logger['deployment']['ring']['id']}"
-            / f"deployment={logger['deployment']['id']}"
-            / f"type={logger['type']}"
-            / filename
-        )
+        if not logger or not logger[0]:
+            put_warning(
+                f"File {filename} not found in metadata, will be saved in unknown"
+            )
+            s3_path = (
+                LOGGERS_PATH
+                / "colony=unknown"
+                / "species=unknown"
+                / "ring=unknown"
+                / "deployment=unknown"
+                / "type=unknown"
+                / filename
+            )
+        else:
+            logger = logger[0]
+            s3_path = (
+                LOGGERS_PATH
+                / f"colony={logger['deployment']['colony']}"
+                / f"species={logger['deployment']['ring']['animal']['species']}"
+                / f"ring={logger['deployment']['ring']['id']}"
+                / f"deployment={logger['deployment']['id']}"
+                / f"type={logger['type']}"
+                / filename
+            )
 
         if s3_path.exists():
             put_warning(f"File {filename} exists already, will be skipped")
