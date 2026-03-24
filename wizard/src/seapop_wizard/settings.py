@@ -21,6 +21,7 @@ log = configure_logger(env("LOGGING", default="INFO"))
 
 POSTGREST_URL = env("POSTGREST_URL", default="http://localhost:3000")
 POSTGREST_TOKEN = env("POSTGREST_TOKEN")
+CHECK_UNKNOWN_INTERVAL = env.int("CHECK_UNKNOWN_INTERVAL", default=10)
 TO_PARQUET = env("TO_PARQUET", default="False").lower() in ("true", "1", "t")
 ACCEPTED_EXTENSIONS = env(
     "ACCEPTED_EXTENSIONS", default=".csv,.pos,.gpx,.txt,.log"
