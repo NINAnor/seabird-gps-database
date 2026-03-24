@@ -292,7 +292,7 @@ def handle_loggers():
                 multiple=True,
                 accept=ACCEPTED_EXTENSIONS,
                 name="files",
-                max_size="800M",
+                max_size="100G",
             ),
         ],
     )
@@ -344,7 +344,7 @@ def handle_loggers():
 
 
 def main():
-    start_server(wizard, port=8000, debug=True, max_payload_size="800M")
+    start_server(wizard, port=8000, debug=True, max_payload_size="100G")
 
 
 if __name__ == "__main__":
