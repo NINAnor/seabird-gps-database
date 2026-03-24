@@ -299,47 +299,55 @@ def handle_loggers():
     logger_files = inputs["files"]
 
     for logger_file in logger_files:
-        filename = logger_file["filename"]
-        url = f"{POSTGREST_URL}/flat_logger_files?select=filename,deployment(colony,id,ring(id,animal(species))),type&filename=ilike.*{filename}&limit=1"
-        response = requests.get(url)
+        try:
+            filename = logger_file["filename"]
+            url = f"{POSTGREST_URL}/flat_logger_files?select=filename,deployment(colony,id,ring(id,animal(species))),type&filename=ilike.*{filename}&limit=1"
+            response = requests.get(url)
 
-        logger = response.json()
+            logger = response.json()
 
-        logging.info("result", url=url, data=logger)
+            logging.info("result", url=url, data=logger)
 
-        if not logger or not isinstance(logger, list) or len(logger) == 0:
-            put_warning(
-                f"File {filename} not found in metadata, will be saved in unknown"
-            )
-            s3_path = (
-                LOGGERS_PATH
-                / "colony=unknown"
-                / "species=unknown"
-                / "ring=unknown"
-                / "deployment=unknown"
-                / "type=unknown"
-                / filename
-            )
-        else:
-            logger = logger[0]
-            s3_path = (
-                LOGGERS_PATH
-                / f"colony={logger['deployment']['colony']}"
-                / f"species={logger['deployment']['ring']['animal']['species']}"
-                / f"ring={logger['deployment']['ring']['id']}"
-                / f"deployment={logger['deployment']['id']}"
-                / f"type={logger['type']}"
-                / filename
-            )
-
-        if s3_path.exists():
-            put_warning(f"File {filename} exists already, will be skipped")
-        else:
-            with s3_path.open("wb") as output:
-                output.write(logger_file["content"])
-                put_success(
-                    f"Logger data {filename} have been imported sucessfully. Files are converted every minute."
+            if not logger or not isinstance(logger, list) or len(logger) == 0:
+                put_warning(
+                    f"File {filename} not found in metadata, will be saved in unknown"
                 )
+                s3_path = (
+                    LOGGERS_PATH
+                    / "colony=unknown"
+                    / "species=unknown"
+                    / "ring=unknown"
+                    / "deployment=unknown"
+                    / "type=unknown"
+                    / filename
+                )
+            else:
+                logger = logger[0]
+                s3_path = (
+                    LOGGERS_PATH
+                    / f"colony={logger['deployment']['colony']}"
+                    / f"species={logger['deployment']['ring']['animal']['species']}"
+                    / f"ring={logger['deployment']['ring']['id']}"
+                    / f"deployment={logger['deployment']['id']}"
+                    / f"type={logger['type']}"
+                    / filename
+                )
+
+            if s3_path.exists():
+                put_warning(f"File {filename} exists already, will be skipped")
+            else:
+                with s3_path.open("wb") as output:
+                    output.write(logger_file["content"])
+                    put_success(
+                        f"Logger data {filename} have been imported sucessfully. Files are converted every minute."
+                    )
+        except Exception as instance:
+            logging.error(
+                "Error while importing logger file",
+                filename=filename,
+                error=str(instance),
+            )
+            put_error(f"Error while importing logger file {filename} - {str(instance)}")
     put_reload_button()
 
 
