@@ -24,8 +24,8 @@ UNKNOWN_PATH = (
 
 def check_missing():
     log.info("checking...")
-    try:
-        for s3_file in LOGGERS_PATH.glob("**/*"):
+    for s3_file in LOGGERS_PATH.glob("**/*"):
+        try:
             if s3_file.is_dir():
                 continue
 
@@ -34,7 +34,7 @@ def check_missing():
             parquet_path = s3_file.with_suffix(".parquet")
 
             if not parquet_path.exists():
-                log.info(f"{filename} not found in parquets, processing...")
+                log.info("not found in parquets, processing...", filename=filename)
 
                 # Parse and convert
                 try:
@@ -47,15 +47,15 @@ def check_missing():
                         compression="zstd",
                     )
                 except NotImplementedError:
-                    log.error(f"Unable to parse {filename}, skipping...")
-    except Exception as e:
-        log.error(f"Error checking missing files: {e}")
+                    log.error("Unable to parse file, skipping...", filename=filename)
+        except Exception as e:
+            log.error("Error checking missing files", error=e, filename=s3_file.name)
 
 
 def check_unknown():
     log.info("checking unknown files...")
-    try:
-        for s3_file in UNKNOWN_PATH.glob("*"):
+    for s3_file in UNKNOWN_PATH.glob("*"):
+        try:
             if s3_file.is_dir() or s3_file.suffix == ".parquet":
                 continue
 
@@ -85,7 +85,9 @@ def check_unknown():
                 / filename
             )
 
-            log.info("moving unknown file", filename=filename, destination=str(dest_path))
+            log.info(
+                "moving unknown file", filename=filename, destination=str(dest_path)
+            )
             dest_path.write_bytes(s3_file.read_bytes())
             s3_file.unlink()
 
@@ -95,8 +97,8 @@ def check_unknown():
                 parquet_dest.write_bytes(parquet_src.read_bytes())
                 parquet_src.unlink()
                 log.info("moved companion parquet", filename=parquet_dest.name)
-    except Exception as e:
-        log.error(f"Error checking unknown files: {e}")
+        except Exception as err:
+            log.error("Error checking unknown file", error=err, filename=s3_file.name)
 
 
 @app.command()
