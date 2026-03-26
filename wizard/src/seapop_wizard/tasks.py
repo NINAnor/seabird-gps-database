@@ -47,9 +47,18 @@ def check_missing():
                         compression="zstd",
                     )
                 except NotImplementedError:
-                    log.error("Unable to parse file, skipping...", filename=filename)
+                    log.error(
+                        "Unable to parse file, skipping...",
+                        filename=filename,
+                        path=str(s3_file),
+                    )
         except Exception as e:
-            log.error("Error checking missing files", error=e, filename=s3_file.name)
+            log.error(
+                "Error checking missing files",
+                error=e,
+                filename=s3_file.name,
+                path=str(s3_file),
+            )
 
 
 def check_unknown():
@@ -96,9 +105,18 @@ def check_unknown():
                 parquet_dest = dest_path.with_suffix(".parquet")
                 parquet_dest.write_bytes(parquet_src.read_bytes())
                 parquet_src.unlink()
-                log.info("moved companion parquet", filename=parquet_dest.name)
+                log.info(
+                    "moved companion parquet",
+                    filename=parquet_dest.name,
+                    path=str(parquet_dest),
+                )
         except Exception as err:
-            log.error("Error checking unknown file", error=err, filename=s3_file.name)
+            log.error(
+                "Error checking unknown file",
+                error=err,
+                filename=s3_file.name,
+                path=str(s3_file),
+            )
 
 
 @app.command()
