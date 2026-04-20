@@ -12,14 +12,7 @@ from .settings import log
 
 app = typer.Typer()
 
-UNKNOWN_PATH = (
-    LOGGERS_PATH
-    / "colony=unknown"
-    / "species=unknown"
-    / "ring=unknown"
-    / "deployment=unknown"
-    / "type=unknown"
-)
+UNKNOWN_PATH = LOGGERS_PATH / "deployment=unknown"
 
 
 def check_missing():
@@ -71,7 +64,7 @@ def check_unknown():
             filename = s3_file.name
             url = (
                 f"{POSTGREST_URL}/flat_logger_files"
-                f"?select=filename,deployment(colony,id,ring(id,animal(species))),type"
+                f"?select=filename,deployment,type"
                 f"&filename=ilike.*{filename}&limit=1"
             )
             response = requests.get(url)
@@ -85,13 +78,7 @@ def check_unknown():
 
             logger = result[0]
             dest_path = (
-                LOGGERS_PATH
-                / f"colony={logger['deployment']['colony']}"
-                / f"species={logger['deployment']['ring']['animal']['species']}"
-                / f"ring={logger['deployment']['ring']['id']}"
-                / f"deployment={logger['deployment']['id']}"
-                / f"type={logger['type']}"
-                / filename
+                LOGGERS_PATH / f"deployment={logger['deployment']['id']}" / filename
             )
 
             log.info(

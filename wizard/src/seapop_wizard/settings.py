@@ -45,9 +45,8 @@ BASE_PATH = UPath(
 # S3 paths using UPath
 LOGGERS_PATH = BASE_PATH / "loggers"
 SPREADSHEETS_PATH = BASE_PATH / "metadata"
-PARQUET_PATH = BASE_PATH / "parquet"
 
 # Ensure S3 directories exist
-PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH, PARQUET_PATH]
+PATHS = [LOGGERS_PATH, SPREADSHEETS_PATH]
 for path in PATHS:
     path.mkdir(exist_ok=True)
