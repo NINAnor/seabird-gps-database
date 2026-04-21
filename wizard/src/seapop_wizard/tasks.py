@@ -19,7 +19,7 @@ def check_missing():
     log.info("checking...")
     for s3_file in LOGGERS_PATH.glob("**/*"):
         try:
-            if s3_file.is_dir():
+            if s3_file.is_dir() or s3_file.suffix == ".parquet":
                 continue
 
             filename = s3_file.name
@@ -31,7 +31,7 @@ def check_missing():
 
                 # Parse and convert
                 try:
-                    parser = detect_file(path=s3_file)
+                    parser = detect_file(path=s3_file, logger=log)
                     log.info("parsed", parser=parser)
                     pq.write_table(
                         parser.as_table(),
@@ -39,6 +39,7 @@ def check_missing():
                         filesystem=parquet_path.fs,
                         compression="zstd",
                     )
+                    log.info("parquet written", path=str(parquet_path))
                 except NotImplementedError:
                     log.error(
                         "Unable to parse file, skipping...",
@@ -74,6 +75,7 @@ def check_unknown():
             log.info("checked unknown file", filename=filename, result=result)
 
             if not result or not isinstance(result, list) or len(result) == 0:
+                log.info("not found in database", filename=filename)
                 continue
 
             logger = result[0]
