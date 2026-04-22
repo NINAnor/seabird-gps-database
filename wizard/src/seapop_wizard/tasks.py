@@ -65,7 +65,7 @@ def check_unknown():
             filename = s3_file.name
             url = (
                 f"{POSTGREST_URL}/flat_logger_files"
-                f"?select=filename,deployment,type"
+                f"?select=filename,deployment_id,type"
                 f"&filename=ilike.*{filename}&limit=1"
             )
             response = requests.get(url)
@@ -80,7 +80,7 @@ def check_unknown():
 
             logger = result[0]
             dest_path = (
-                LOGGERS_PATH / f"deployment={logger['deployment']['id']}" / filename
+                LOGGERS_PATH / f"deployment={logger['deployment_id']}" / filename
             )
 
             log.info(
