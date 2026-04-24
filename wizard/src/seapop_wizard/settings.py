@@ -1,6 +1,7 @@
 from environ import Env
 from jinja2 import Environment, PackageLoader, select_autoescape
 from upath import UPath
+import os
 
 from seapop_wizard.logger import configure_logger
 
@@ -19,6 +20,7 @@ template_engine = Environment(
 
 log = configure_logger(env("LOGGING", default="INFO"))
 
+DATABASE_URL = env("DATABASE_URL", default="")
 POSTGREST_URL = env("POSTGREST_URL", default="http://localhost:3000")
 POSTGREST_TOKEN = env("POSTGREST_TOKEN")
 CHECK_UNKNOWN_INTERVAL = env.int("CHECK_UNKNOWN_INTERVAL", default=10)
@@ -35,6 +37,10 @@ S3_ENDPOINT = env("AWS_S3_ENDPOINT")
 S3_ACCESS_KEY = env("AWS_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
 
+os.environ["NINA_S3"] = (
+    f"{{type: s3, region: '', bucket: {S3_BUCKET}, access_key_id: {S3_ACCESS_KEY}, secret_access_key: {S3_SECRET_ACCESS_KEY}, endpoint: '{S3_ENDPOINT}', url_style: path}}"
+)
+
 BASE_PATH = UPath(
     f"s3://{S3_BUCKET}/{S3_PREFIX}",
     endpoint_url=S3_ENDPOINT,
@@ -45,6 +51,7 @@ BASE_PATH = UPath(
 # S3 paths using UPath
 LOGGERS_PATH = BASE_PATH / "loggers"
 PARQUET_PATH = BASE_PATH / "parquet"
+DATABASE_PATH = BASE_PATH / "database"
 SPREADSHEETS_PATH = BASE_PATH / "metadata"
 
 # Ensure S3 directories exist
