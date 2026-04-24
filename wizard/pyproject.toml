@@ -24,6 +24,7 @@ dependencies = [
     "s3fs>=2026.2.0",
     "universal-pathlib>=0.3.9",
     "django-environ>=0.12.1",
+    "sling>=1.5.15",
 ]
 requires-python = ">=3.11"
 license = {text = "GPLv3"}
@@ -31,6 +32,7 @@ license = {text = "GPLv3"}
 [project.scripts]
 wizard = "seapop_wizard.wizard:main"
 tasks = "seapop_wizard.tasks:main"
+sync = "seapop_wizard.tasks:sync_database"
 
 [dependency-groups]
 dev = [
