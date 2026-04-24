@@ -6,7 +6,12 @@ import schedule
 import typer
 from gps_logger_parser.parser import detect_file
 
-from seapop_wizard.settings import CHECK_UNKNOWN_INTERVAL, LOGGERS_PATH, POSTGREST_URL
+from seapop_wizard.settings import (
+    CHECK_UNKNOWN_INTERVAL,
+    LOGGERS_PATH,
+    PARQUET_PATH,
+    POSTGREST_URL,
+)
 
 from .settings import log
 
@@ -24,7 +29,8 @@ def check_missing():
 
             filename = s3_file.name
 
-            parquet_path = s3_file.with_suffix(".parquet")
+            relative = s3_file.relative_to(LOGGERS_PATH).with_suffix(".parquet")
+            parquet_path = PARQUET_PATH / relative
 
             if not parquet_path.exists():
                 log.info("not found in parquets, processing...", filename=filename)
@@ -89,9 +95,9 @@ def check_unknown():
             dest_path.write_bytes(s3_file.read_bytes())
             s3_file.unlink()
 
-            parquet_src = s3_file.with_suffix(".parquet")
+            parquet_src = PARQUET_PATH / s3_file.relative_to(LOGGERS_PATH).with_suffix(".parquet")
             if parquet_src.exists():
-                parquet_dest = dest_path.with_suffix(".parquet")
+                parquet_dest = PARQUET_PATH / dest_path.relative_to(LOGGERS_PATH).with_suffix(".parquet")
                 parquet_dest.write_bytes(parquet_src.read_bytes())
                 parquet_src.unlink()
                 log.info(

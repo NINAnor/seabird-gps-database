@@ -44,6 +44,7 @@ BASE_PATH = UPath(
 
 # S3 paths using UPath
 LOGGERS_PATH = BASE_PATH / "loggers"
+PARQUET_PATH = BASE_PATH / "parquet"
 SPREADSHEETS_PATH = BASE_PATH / "metadata"
 
 # Ensure S3 directories exist
