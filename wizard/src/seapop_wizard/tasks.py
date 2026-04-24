@@ -5,12 +5,16 @@ import requests
 import schedule
 import typer
 from gps_logger_parser.parser import detect_file
+from sling import Mode, Replication, ReplicationStream
 
 from seapop_wizard.settings import (
     CHECK_UNKNOWN_INTERVAL,
+    DATABASE_URL,
     LOGGERS_PATH,
     PARQUET_PATH,
     POSTGREST_URL,
+    S3_BUCKET,
+    S3_PREFIX,
 )
 
 from .settings import log
@@ -95,9 +99,13 @@ def check_unknown():
             dest_path.write_bytes(s3_file.read_bytes())
             s3_file.unlink()
 
-            parquet_src = PARQUET_PATH / s3_file.relative_to(LOGGERS_PATH).with_suffix(".parquet")
+            parquet_src = PARQUET_PATH / s3_file.relative_to(LOGGERS_PATH).with_suffix(
+                ".parquet"
+            )
             if parquet_src.exists():
-                parquet_dest = PARQUET_PATH / dest_path.relative_to(LOGGERS_PATH).with_suffix(".parquet")
+                parquet_dest = PARQUET_PATH / dest_path.relative_to(
+                    LOGGERS_PATH
+                ).with_suffix(".parquet")
                 parquet_dest.write_bytes(parquet_src.read_bytes())
                 parquet_src.unlink()
                 log.info(
@@ -114,14 +122,40 @@ def check_unknown():
             )
 
 
+def sync_database():
+    log.info("syncing database to parquet...")
+    try:
+        sling = Replication(
+            source=DATABASE_URL,
+            target="NINA_S3",
+            streams={
+                "public.flat_logger_files": ReplicationStream(
+                    object=f"s3://{S3_BUCKET}/{S3_PREFIX}database/loggers.parquet",
+                    mode=Mode.FULL_REFRESH,
+                ),
+                "public.flat_deployments": ReplicationStream(
+                    object=f"s3://{S3_BUCKET}/{S3_PREFIX}database/deployments.parquet",
+                    mode=Mode.FULL_REFRESH,
+                ),
+            },
+            debug=True,
+        )
+        sling.run()
+        log.info("database synced")
+    except Exception as e:
+        log.error("Error syncing database", error=e)
+
+
 @app.command()
 def main():
     check_missing()
     check_unknown()
+    sync_database()
 
     log.info("Setting up scheduler")
     schedule.every().minute.do(check_missing)
     schedule.every(CHECK_UNKNOWN_INTERVAL).minutes.do(check_unknown)
+    schedule.every(5).minutes.do(sync_database)
 
     while True:
         try:
