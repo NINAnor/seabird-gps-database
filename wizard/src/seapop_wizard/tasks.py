@@ -27,37 +27,41 @@ UNKNOWN_PATH = LOGGERS_PATH / "deployment=unknown"
 def check_missing():
     log.info("checking...")
     for s3_file in LOGGERS_PATH.glob("**/*"):
+        logger = log.bind(path=str(s3_file))
+        logger.debug("checking path")
         try:
             if s3_file.is_dir() or s3_file.suffix == ".parquet":
                 continue
 
             filename = s3_file.name
 
+            logger.debug("checking file", filename=filename)
+
             relative = s3_file.relative_to(LOGGERS_PATH).with_suffix(".parquet")
             parquet_path = PARQUET_PATH / relative
 
             if not parquet_path.exists():
-                log.info("not found in parquets, processing...", filename=filename)
+                logger.info("not found in parquets, processing...", filename=filename)
 
                 # Parse and convert
                 try:
                     parser = detect_file(path=s3_file, logger=log)
-                    log.info("parsed", parser=parser)
+                    logger.info("parsed", parser=parser)
                     pq.write_table(
                         parser.as_table(),
                         str(parquet_path),
                         filesystem=parquet_path.fs,
                         compression="zstd",
                     )
-                    log.info("parquet written", path=str(parquet_path))
+                    logger.info("parquet written", path=str(parquet_path))
                 except NotImplementedError:
-                    log.error(
+                    logger.error(
                         "Unable to parse file, skipping...",
                         filename=filename,
                         path=str(s3_file),
                     )
         except Exception as e:
-            log.error(
+            logger.error(
                 "Error checking missing files",
                 error=e,
                 filename=s3_file.name,
