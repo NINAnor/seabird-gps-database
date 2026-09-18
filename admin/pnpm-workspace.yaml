@@ -1,0 +1,24 @@
+allowBuilds:
+  esbuild: set this to true or false
+minimumReleaseAgeExclude:
+  - minimatch@3.1.3 || 3.1.4 || 9.0.6 || 9.0.7
+  - rollup@4.59.0
+  - ajv@6.14.0
+  - flatted@3.4.0 || 3.4.2
+  - brace-expansion@1.1.13 || 1.1.16 || 1.1.17 || 1.1.18 || 2.0.3 || 2.1.2 || 2.1.3 || 2.1.4
+  - picomatch@4.0.4
+  - yaml@1.10.3
+  - dompurify@3.3.2 || 3.3.4 || 3.4.0 || 3.4.6 || 3.4.7 || 3.4.8 || 3.4.9 || 3.4.11 || 3.4.12 || 3.4.13
+  - lodash@4.17.24
+  - vite@7.3.2 || 7.3.5
+  - postcss@8.5.10 || 8.5.12 || 8.5.18 || 8.5.23
+  - qs@6.15.2 || 6.15.4 || 6.16.0
+  - react-router@7.13.2 || 7.14.0 || 7.14.1 || 7.14.2 || 7.15.0 || 7.15.1 || 7.18.0 || 7.18.2
+  - esbuild@0.28.1
+  - js-yaml@4.1.2 || 4.3.0 || 4.3.1 || 4.3.2
+  - '@babel/core@7.29.1'
+  - nanoid@3.3.12 || 3.3.16 || 3.3.18
+  - decode-uri-component@0.4.3
+  - browserslist@4.28.7
+  - '@humanfs/node@0.16.8'
+  - baseline-browser-mapping@2.11.0
