@@ -1,7 +1,7 @@
 \restrict dbmate
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+1)
--- Dumped by pg_dump version 18.1
+-- Dumped by pg_dump version 18.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -969,7 +969,8 @@ CREATE VIEW public.flat_deployments AS
     a.subspecies,
     d.tarsus_mm,
     d.total_logger_mass_all_loggers_g,
-    d.wing_mm
+    d.wing_mm,
+    d.date
    FROM (((public.deployment d
      JOIN public.colony c ON ((d.colony = c.name)))
      JOIN public.ring r ON ((r.id = d.ring)))
@@ -1252,4 +1253,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240508145820'),
     ('20250917000000'),
     ('20260213106000'),
-    ('20260217106000');
+    ('20260217106000'),
+    ('20261019130831');
