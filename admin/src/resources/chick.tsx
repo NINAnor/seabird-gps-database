@@ -11,15 +11,18 @@ import {
   SimpleForm,
   NumberInput,
   BooleanInput,
-  ReferenceInput,
-  SelectInput,
-  required,
   TextInput,
 } from "react-admin";
+import { ReferenceAutocompleteInput } from "./ReferenceAutocompleteInput";
 
 const ChickFilter = [
     <TextInput label="Search" source="id" alwaysOn />,
-    <ReferenceInput source="deployment" reference="deployment" />,
+    <ReferenceAutocompleteInput
+      source="deployment"
+      reference="deployment"
+      searchField="id"
+      numericSearch
+    />,
 ];
 
 export const ChickList = () => (
@@ -54,9 +57,13 @@ export const ChickEdit = () => (
   <Edit>
     <SimpleForm>
       <TextField source="id" />
-      <ReferenceInput source="deployment" reference="deployment">
-        <SelectInput validate={required()} />
-      </ReferenceInput>
+      <ReferenceAutocompleteInput
+        source="deployment"
+        reference="deployment"
+        searchField="id"
+        isRequired
+        numericSearch
+      />
       <NumberInput source="mass_deployment_g" />
       <BooleanInput source="mass_deployment_accurate" />
       <NumberInput source="age_deployment_days" />

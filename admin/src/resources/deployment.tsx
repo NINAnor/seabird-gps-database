@@ -1,10 +1,16 @@
-import { List, Datagrid, TextField, DateField, NumberField, BooleanField, ReferenceField, Show, SimpleShowLayout, Edit, SimpleForm, TextInput, DateInput, NumberInput, BooleanInput, ReferenceInput, SelectInput, required } from "react-admin";
+import { List, Datagrid, TextField, DateField, NumberField, BooleanField, ReferenceField, Show, SimpleShowLayout, Edit, SimpleForm, TextInput, DateInput, NumberInput, BooleanInput } from "react-admin";
 import { BulkEditSexButton } from "./BulkEditSexButton";
+import { ReferenceAutocompleteInput } from "./ReferenceAutocompleteInput";
 
 const DeploymentFilter = [
   <TextInput label="Search" source="id" alwaysOn />,
-  <ReferenceInput source="ring" reference="ring" />,
-  <TextInput label="Colony" source="colony" />,
+  <ReferenceAutocompleteInput source="ring" reference="ring" searchField="id" />,
+  <ReferenceAutocompleteInput
+    label="Colony"
+    source="colony"
+    reference="colony"
+    searchField="name"
+  />,
   <TextInput label="Sex" source="sex" />,
   <DateInput label="Date" source="date" />,
   <TextInput label="Data Responsible" source="data_responsible" />,
@@ -76,13 +82,18 @@ export const DeploymentEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="id" disabled />
-      <ReferenceInput source="ring" reference="ring">
-        <SelectInput validate={required()} />
-      </ReferenceInput>
+      <ReferenceAutocompleteInput
+        source="ring"
+        reference="ring"
+        searchField="id"
+        isRequired
+      />
       <DateInput source="date" validate={required()} />
-      <ReferenceInput source="colony" reference="colony">
-        <SelectInput />
-      </ReferenceInput>
+      <ReferenceAutocompleteInput
+        source="colony"
+        reference="colony"
+        searchField="name"
+      />
       <NumberInput source="total_logger_mass_all_loggers_g" />
       <TextInput source="age" />
       <TextInput source="sex" />

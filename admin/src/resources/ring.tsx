@@ -8,14 +8,12 @@ import {
   Edit,
   SimpleForm,
   TextInput,
-  ReferenceInput,
-  SelectInput,
-  required,
 } from "react-admin";
+import { ReferenceAutocompleteInput } from "./ReferenceAutocompleteInput";
 
 const RingFilter = [
     <TextInput label="Search" source="id" alwaysOn />,
-    <ReferenceInput source="animal" reference="animal" />,
+    <ReferenceAutocompleteInput source="animal" reference="animal" searchField="id" />,
     <TextInput label="Euring Code" source="euring_code" />,
 ];
 
@@ -47,9 +45,12 @@ export const RingEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="id" disabled />
-      <ReferenceInput source="animal" reference="animal">
-        <SelectInput validate={required()} />
-      </ReferenceInput>
+      <ReferenceAutocompleteInput
+        source="animal"
+        reference="animal"
+        searchField="id"
+        isRequired
+      />
       <TextInput source="euring_code" />
       <TextInput source="colour_ring_colour" />
       <TextInput source="colour_ring_code" />

@@ -12,15 +12,22 @@ import {
   TextInput,
   NumberInput,
   DateTimeInput,
-  ReferenceInput,
-  SelectInput,
-  required,
 } from "react-admin";
+import { ReferenceAutocompleteInput } from "./ReferenceAutocompleteInput";
 
 const LoggerInstrumentationFilter = [
     <TextInput label="Search" source="id" alwaysOn />,
-    <ReferenceInput source="logger" reference="logger" />,
-    <ReferenceInput source="deployment_id" reference="deployment" />,
+    <ReferenceAutocompleteInput
+      source="logger"
+      reference="logger"
+      searchField="id"
+    />,
+    <ReferenceAutocompleteInput
+      source="deployment_id"
+      reference="deployment"
+      searchField="id"
+      numericSearch
+    />,
     <TextInput label="Status" source="status" />,
     <TextInput label="Filename" source="filename" />,
 ];
@@ -65,12 +72,19 @@ export const LoggerInstrumentationEdit = () => (
   <Edit>
     <SimpleForm>
       <TextField source="id" />
-      <ReferenceInput source="logger" reference="logger">
-        <SelectInput validate={required()} />
-      </ReferenceInput>
-      <ReferenceInput source="deployment_id" reference="deployment">
-        <SelectInput validate={required()} />
-      </ReferenceInput>
+      <ReferenceAutocompleteInput
+        source="logger"
+        reference="logger"
+        searchField="id"
+        isRequired
+      />
+      <ReferenceAutocompleteInput
+        source="deployment_id"
+        reference="deployment"
+        searchField="id"
+        isRequired
+        numericSearch
+      />
       <TextInput source="status" />
       <NumberInput source="sampling_freq_s" />
       <NumberInput source="mass_g" />
