@@ -1,4 +1,4 @@
-import { List, Datagrid, TextField, DateField, NumberField, BooleanField, ReferenceField, Show, SimpleShowLayout, Edit, SimpleForm, TextInput, DateInput, NumberInput, BooleanInput } from "react-admin";
+import { List, Datagrid, TextField, DateField, NumberField, BooleanField, ReferenceField, Show, SimpleShowLayout, Edit, SimpleForm, TextInput, DateInput, NumberInput, BooleanInput, required } from "react-admin";
 import { BulkEditSexButton } from "./BulkEditSexButton";
 import { ReferenceAutocompleteInput } from "./ReferenceAutocompleteInput";
 
