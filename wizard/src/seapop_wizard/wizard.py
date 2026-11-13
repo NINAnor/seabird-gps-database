@@ -301,7 +301,7 @@ def handle_loggers():
     for logger_file in logger_files:
         try:
             filename = logger_file["filename"]
-            url = f"{POSTGREST_URL}/flat_logger_files?select=filename,deployment(colony,id,ring(id,animal(species))),type&filename=ilike.*{filename}&limit=1"
+            url = f"{POSTGREST_URL}/flat_logger_files?select=deployment_id&filename=ilike.*{filename}&limit=1"
             response = requests.get(url)
 
             logger = response.json()
@@ -312,26 +312,11 @@ def handle_loggers():
                 put_warning(
                     f"File {filename} not found in metadata, will be saved in unknown"
                 )
-                s3_path = (
-                    LOGGERS_PATH
-                    / "colony=unknown"
-                    / "species=unknown"
-                    / "ring=unknown"
-                    / "deployment=unknown"
-                    / "type=unknown"
-                    / filename
-                )
+                deployment_id = "unknown"
             else:
-                logger = logger[0]
-                s3_path = (
-                    LOGGERS_PATH
-                    / f"colony={logger['deployment']['colony']}"
-                    / f"species={logger['deployment']['ring']['animal']['species']}"
-                    / f"ring={logger['deployment']['ring']['id']}"
-                    / f"deployment={logger['deployment']['id']}"
-                    / f"type={logger['type']}"
-                    / filename
-                )
+                deployment_id = logger[0].get("deployment_id") or "unknown"
+
+            s3_path = LOGGERS_PATH / f"deployment={deployment_id}" / filename
 
             if s3_path.exists():
                 put_warning(f"File {filename} exists already, will be skipped")
